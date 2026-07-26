@@ -35,7 +35,7 @@ MediChain is a production-grade Web3 healthcare ecosystem built on the Stellar T
 Create a `.env.local` file in the root of your `/frontend` directory and add the following required variables:
 
 ```env
-NEXT_PUBLIC_CONTRACT_ID=CONTRACT_ADDRESS_HERE
+NEXT_PUBLIC_CONTRACT_ID= CAMBP7LO53Z3CYLFXEY4LTL6EWFG2FOC5ZPP7QO35JPMIMRVFBXAZOOF
 NEXT_PUBLIC_SOROBAN_RPC_URL=[https://soroban-testnet.stellar.org:443](https://soroban-testnet.stellar.org:443)
 NEXT_PUBLIC_NETWORK_PASSPHRASE="Test SDF Network ; September 2015"
 ```
@@ -84,9 +84,6 @@ To deploy the frontend application to Vercel:
 6. Click Deploy.
 
 ## Contract Address Placeholder
-CONTRACT_ADDRESS_HERE
-
-## Example Transaction Hash Placeholder
-TRANSACTION_HASH_HERE
+CONTRACT_ADDRESS_HERE = CAMBP7LO53Z3CYLFXEY4LTL6EWFG2FOC5ZPP7QO35JPMIMRVFBXAZOOF
 
 ---

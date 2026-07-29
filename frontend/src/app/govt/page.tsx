@@ -1,7 +1,7 @@
 'use client';
 
 // ============================================================
-// MediChain Government Super Admin Portal (/govt) — Light Theme 3D
+// MediChain Government Super Admin Portal (/govt) — Dashboard Layout
 // ============================================================
 
 import React, { useState } from 'react';
@@ -74,7 +74,7 @@ export default function GovtDashboard() {
   // Role Guarding: Require Govt Admin authentication
   if (user.role !== 'govt') {
     return (
-      <div className="min-h-[80vh] flex flex-col items-center justify-center p-6 text-center bg-[#F8FAFC]">
+      <div className="min-h-[80vh] flex flex-col items-center justify-center p-6 text-center bg-[#F8FAFC] md:ml-64">
         <div className="max-w-md space-y-4 bg-white p-8 rounded-3xl border border-slate-200 shadow-2xl shadow-slate-200/80">
           <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 mx-auto">
             <ShieldAlert className="w-6 h-6" />
@@ -96,7 +96,7 @@ export default function GovtDashboard() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-slate-900 font-sans">
+    <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-slate-900 font-sans md:ml-64">
       
       {/* SUB-HEADER */}
       <div className="bg-white border-b border-slate-200/80 shadow-sm px-4 sm:px-6 py-3.5">
@@ -108,7 +108,7 @@ export default function GovtDashboard() {
             <span className="font-mono text-[11px] text-slate-500 font-normal">Registry Contract: {REGISTRY_CONTRACT_ID.slice(0, 14)}...</span>
           </div>
 
-          <div className="flex items-center gap-2 text-xs text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 font-bold">
+          <div className="flex items-center gap-2 text-xs text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 font-bold">
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
             <span>Super Admin: {user.username}</span>
           </div>
@@ -156,7 +156,7 @@ export default function GovtDashboard() {
                     <button
                       type="button"
                       onClick={openWalletModal}
-                      className="px-3.5 py-1.5 rounded-xl bg-teal-600 text-white hover:bg-teal-500 text-xs font-bold shadow-md shadow-teal-600/20 transition-all flex items-center gap-1.5"
+                      className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-600 text-white font-extrabold text-xs shadow-md shadow-teal-500/20 hover:shadow-teal-500/30 transition-all flex items-center gap-1.5"
                     >
                       <Key className="w-3.5 h-3.5" />
                       <span>Connect Wallet</span>
@@ -182,7 +182,7 @@ export default function GovtDashboard() {
                     placeholder="e.g. Apollo Hospitals (Bangalore)"
                     value={hospitalName}
                     onChange={(e) => setHospitalName(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-teal-600 focus:bg-white transition-all"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-teal-600 focus:bg-white transition-all font-medium"
                   />
                 </div>
 
@@ -211,7 +211,7 @@ export default function GovtDashboard() {
                 <button
                   type="submit"
                   disabled={isExecuting}
-                  className="w-full py-4 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-500 hover:to-cyan-500 disabled:from-slate-300 disabled:to-slate-300 text-white font-extrabold rounded-xl shadow-lg shadow-teal-600/20 disabled:shadow-none transition-all flex items-center justify-center gap-2 text-xs sm:text-sm"
+                  className="w-full py-4 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-600 hover:from-emerald-400 hover:to-cyan-500 disabled:from-slate-300 disabled:to-slate-300 text-white font-extrabold rounded-xl shadow-lg shadow-teal-500/25 disabled:shadow-none transition-all flex items-center justify-center gap-2 text-xs sm:text-sm"
                 >
                   {isExecuting ? (
                     <>
@@ -280,7 +280,7 @@ export default function GovtDashboard() {
                         </div>
                       </div>
 
-                      <span className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full flex items-center gap-1">
+                      <span className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-full flex items-center gap-1">
                         <CheckCircle2 className="w-3 h-3 text-emerald-600" />
                         Whitelisted
                       </span>

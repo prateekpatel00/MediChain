@@ -1,13 +1,14 @@
 'use client';
 
 // ============================================================
-// MediChain Enterprise SaaS Landing Page (Light Theme 3D)
+// MediChain Enterprise SaaS Landing Page (Shielded Pulse Identity)
 // ============================================================
 
 import React from 'react';
 import Link from 'next/link';
 import {
   Shield,
+  Activity,
   Building2,
   Lock,
   ArrowRight,
@@ -50,7 +51,7 @@ export default function LandingPage() {
 
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-slate-900 leading-tight">
             Decentralized Inter-Hospital <br />
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-teal-600 via-cyan-600 to-slate-900">
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-600">
               Medical Data Protocol
             </span>
           </h1>
@@ -59,13 +60,13 @@ export default function LandingPage() {
             Eliminating medical record silos across healthcare institutions while guaranteeing 100% HIPAA compliance. Diagnostic report hashes are anchored on Stellar Soroban smart contracts, while actual files remain encrypted off-chain.
           </p>
 
-          {/* HERO CTAS */}
+          {/* HERO CTAS (Glowing Mint-to-Teal Gradient Buttons) */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
             <Link
               href={isAuthenticated ? (user.role === 'govt' ? '/govt' : '/hospital') : '/login'}
-              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-500 hover:to-cyan-500 text-white font-bold text-sm shadow-xl shadow-teal-600/25 transition-all flex items-center justify-center gap-2 group"
+              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-600 hover:from-emerald-400 hover:to-cyan-500 text-white font-extrabold text-sm shadow-xl shadow-teal-500/25 transition-all hover:shadow-teal-500/35 hover:-translate-y-0.5 flex items-center justify-center gap-2 group"
             >
-              <span>{isAuthenticated ? 'Launch Operational Portal' : 'Enter Enterprise Login'}</span>
+              <span>{isAuthenticated ? 'Launch Operational Workspace' : 'Enter Enterprise Login'}</span>
               <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
             </Link>
 
@@ -310,8 +311,11 @@ export default function LandingPage() {
           
           <div className="space-y-3 sm:col-span-2">
             <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-600">
-                <Shield className="w-4 h-4" />
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-400 via-teal-500 to-cyan-600 p-0.5 shadow-md shadow-teal-500/20">
+                <div className="w-full h-full bg-white rounded-[10px] flex items-center justify-center relative">
+                  <Shield className="w-4 h-4 text-teal-600" />
+                  <Activity className="w-2.5 h-2.5 text-emerald-500 absolute top-0.5 right-0.5 stroke-[2.5]" />
+                </div>
               </div>
               <span className="font-extrabold text-slate-900 text-base">MediChain Protocol</span>
             </div>

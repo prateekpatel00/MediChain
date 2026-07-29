@@ -6,6 +6,7 @@ import { AuthProvider } from '../context/AuthContext';
 import { WalletProvider } from '../context/WalletContext';
 import { TransactionProvider } from '../context/TransactionContext';
 import { Header } from '../components/Header';
+import { Sidebar } from '../components/Sidebar';
 import { WalletModal } from '../components/WalletModal';
 
 export const metadata: Metadata = {
@@ -33,6 +34,7 @@ export default function RootLayout({
         <AuthProvider>
           <WalletProvider>
             <TransactionProvider>
+              <Sidebar />
               <Header />
               <div className="flex-1">{children}</div>
               <WalletModal />

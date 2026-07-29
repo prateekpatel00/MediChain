@@ -1,7 +1,7 @@
 'use client';
 
 // ============================================================
-// MediChain Transaction Center & Activity Feed (/transactions) — Light Theme 3D
+// MediChain Transaction Center & Activity Feed (/transactions) — Dashboard Layout
 // ============================================================
 
 import React, { useState } from 'react';
@@ -87,7 +87,7 @@ export default function TransactionCenterPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-slate-900 font-sans">
+    <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-slate-900 font-sans md:ml-64">
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 py-8 w-full space-y-8">
         
         {/* Page Header */}
@@ -128,19 +128,19 @@ export default function TransactionCenterPage() {
           </div>
 
           <div className="bg-white p-5 rounded-2xl border border-emerald-200 shadow-md shadow-emerald-500/5 space-y-1">
-            <p className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">Confirmed</p>
+            <p className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider">Confirmed</p>
             <p className="text-2xl font-extrabold text-emerald-600 font-mono">{confirmedCount}</p>
             <p className="text-[10px] text-emerald-600/80 font-medium">On Stellar Testnet</p>
           </div>
 
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-md shadow-slate-200/50 space-y-1">
-            <p className="text-[11px] font-bold text-teal-700 uppercase tracking-wider">Registry Operations</p>
+            <p className="text-[11px] font-bold text-teal-800 uppercase tracking-wider">Registry Operations</p>
             <p className="text-2xl font-extrabold text-teal-600 font-mono">{registryCount}</p>
             <p className="text-[10px] text-slate-400 font-medium">Hospital Whitelist RBAC</p>
           </div>
 
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-md shadow-slate-200/50 space-y-1">
-            <p className="text-[11px] font-bold text-teal-700 uppercase tracking-wider">Core Operations</p>
+            <p className="text-[11px] font-bold text-teal-800 uppercase tracking-wider">Core Operations</p>
             <p className="text-2xl font-extrabold text-teal-600 font-mono">{coreCount}</p>
             <p className="text-[10px] text-slate-400 font-medium">Records &amp; Access Grants</p>
           </div>
@@ -216,7 +216,7 @@ export default function TransactionCenterPage() {
             <div className="pt-2">
               <Link
                 href={user.role === 'govt' ? '/govt' : '/hospital'}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all shadow-md"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-600 text-white text-xs font-extrabold shadow-md transition-all hover:shadow-lg"
               >
                 <span>Go to {user.role === 'govt' ? 'Government Portal' : 'Hospital Action Center'}</span>
               </Link>
@@ -225,7 +225,7 @@ export default function TransactionCenterPage() {
         ) : (
           <div className="space-y-4">
             
-            {/* Desktop Table View */}
+            {/* Desktop Fintech Table View */}
             <div className="hidden lg:block bg-white rounded-2xl border border-slate-200 shadow-xl shadow-slate-200/50 overflow-hidden">
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider">
@@ -247,16 +247,16 @@ export default function TransactionCenterPage() {
                             inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider border
                             ${
                               tx.status === 'Confirmed'
-                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                                 : tx.status === 'Processing' || tx.status === 'Pending'
-                                ? 'bg-teal-50 text-teal-700 border-teal-200'
-                                : 'bg-rose-50 text-rose-700 border-rose-200'
+                                ? 'bg-amber-50 text-amber-800 border-amber-200'
+                                : 'bg-rose-50 text-rose-800 border-rose-200'
                             }
                           `}
                         >
                           {tx.status === 'Confirmed' && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />}
                           {tx.status === 'Processing' && <Loader2 className="w-3.5 h-3.5 text-teal-600 animate-spin" />}
-                          {tx.status === 'Pending' && <Clock className="w-3.5 h-3.5 text-teal-600" />}
+                          {tx.status === 'Pending' && <Clock className="w-3.5 h-3.5 text-amber-600" />}
                           {tx.status === 'Failed' && <XCircle className="w-3.5 h-3.5 text-rose-600" />}
                           {tx.status}
                         </span>
@@ -352,16 +352,16 @@ export default function TransactionCenterPage() {
                         inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border
                         ${
                           tx.status === 'Confirmed'
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                             : tx.status === 'Processing' || tx.status === 'Pending'
-                            ? 'bg-teal-50 text-teal-700 border-teal-200'
-                            : 'bg-rose-50 text-rose-700 border-rose-200'
+                            ? 'bg-amber-50 text-amber-800 border-amber-200'
+                            : 'bg-rose-50 text-rose-800 border-rose-200'
                         }
                       `}
                     >
                       {tx.status === 'Confirmed' && <CheckCircle2 className="w-3 h-3 text-emerald-600" />}
                       {tx.status === 'Processing' && <Loader2 className="w-3 h-3 text-teal-600 animate-spin" />}
-                      {tx.status === 'Pending' && <Clock className="w-3 h-3 text-teal-600" />}
+                      {tx.status === 'Pending' && <Clock className="w-3 h-3 text-amber-600" />}
                       {tx.status === 'Failed' && <XCircle className="w-3 h-3 text-rose-600" />}
                       {tx.status}
                     </span>

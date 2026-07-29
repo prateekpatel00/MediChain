@@ -12,3 +12,4 @@ All notable changes to the MediChain dApp will be documented in this file.
 - feat: Build Transaction Center and Activity Feed UI
 - style: Implement mobile responsive data tables and navigation
 - fix: Abstract blockchain logic into custom React hooks
+- docs: Add production README with Mermaid architecture diagrams by prateekpatel00

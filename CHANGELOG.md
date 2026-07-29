@@ -10,3 +10,4 @@ All notable changes to the MediChain dApp will be documented in this file.
 - test: Add Inter-contract communication integration tests
 - feat: Integrate StellarWalletsKit in Next.js frontend
 - feat: Build Transaction Center and Activity Feed UI
+- style: Implement mobile responsive data tables and navigation

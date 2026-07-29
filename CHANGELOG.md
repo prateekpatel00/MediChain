@@ -9,3 +9,4 @@ All notable changes to the MediChain dApp will be documented in this file.
 - feat: Implement Core Logic contract with cross-contract calls
 - test: Add Inter-contract communication integration tests
 - feat: Integrate StellarWalletsKit in Next.js frontend
+- feat: Build Transaction Center and Activity Feed UI

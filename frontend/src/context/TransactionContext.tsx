@@ -3,16 +3,15 @@
 // ============================================================
 // MediChain Transaction Context — Activity Feed & Lifecycle
 // ============================================================
-// Manages the state of all on-chain Soroban transactions, tracking
-// their lifecycle: Pending -> Processing -> Confirmed / Failed.
-// Persists history to localStorage for the Transaction Center (/transactions).
+// Manages real-time Soroban on-chain transaction lifecycle:
+// Pending -> Processing -> Confirmed / Failed.
+// Zero hardcoded dummy data. Populated strictly when on-chain actions occur.
 // ============================================================
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import type { TransactionItem, TransactionStatus, ContractType } from '../types/medichain';
-import { REGISTRY_CONTRACT_ID, CORE_CONTRACT_ID } from '../services/stellar';
+import type { TransactionItem, TransactionStatus } from '../types/medichain';
 
-const STORAGE_TX_KEY = 'medichain_transactions';
+const STORAGE_TX_KEY = 'medichain_transactions_v2';
 
 export interface TransactionContextType {
   transactions: TransactionItem[];
@@ -25,76 +24,26 @@ export interface TransactionContextType {
   clearTransactions: () => void;
 }
 
-const initialDemoTransactions: TransactionItem[] = [
-  {
-    id: 'tx-seed-1',
-    hash: '8f7a6b5c4d3e2f1a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a',
-    method: 'grant_hospital_rights',
-    contractType: 'Registry Contract',
-    contractId: REGISTRY_CONTRACT_ID,
-    status: 'Confirmed',
-    timestamp: Date.now() - 86400000 * 2,
-    details: 'Government Super Admin authorized Apollo Hospitals (Bangalore) on Registry Contract',
-    caller: 'GBANGALORE99HOSPITAL99STELLAR99999999999999999999999',
-    explorerUrl: `https://stellar.expert/explorer/testnet/tx/8f7a6b5c4d3e2f1a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a`,
-  },
-  {
-    id: 'tx-seed-2',
-    hash: '1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b',
-    method: 'upload_record',
-    contractType: 'Core Contract',
-    contractId: CORE_CONTRACT_ID,
-    status: 'Confirmed',
-    timestamp: Date.now() - 86400000 * 1,
-    details: 'Uploaded patient record hash (PAT-001-BLR) to Core Contract after Registry verification',
-    caller: 'GBANGALORE99HOSPITAL99STELLAR99999999999999999999999',
-    explorerUrl: `https://stellar.expert/explorer/testnet/tx/1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b`,
-  },
-  {
-    id: 'tx-seed-3',
-    hash: '5f4e3d2c1b0a9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1f0e9d8c7b6a5f4e',
-    method: 'request_access',
-    contractType: 'Core Contract',
-    contractId: CORE_CONTRACT_ID,
-    status: 'Confirmed',
-    timestamp: Date.now() - 3600000 * 4,
-    details: 'AIIMS Jabalpur requested access to record PAT-001-BLR for emergency consult',
-    caller: 'GJABALPUR88HOSPITAL88STELLAR88888888888888888888888',
-    explorerUrl: `https://stellar.expert/explorer/testnet/tx/5f4e3d2c1b0a9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1f0e9d8c7b6a5f4e`,
-  },
-];
-
 const TransactionContext = createContext<TransactionContextType | undefined>(undefined);
 
 export function TransactionProvider({ children }: { children: React.ReactNode }) {
   const [transactions, setTransactions] = useState<TransactionItem[]>([]);
 
-  // Load transactions from localStorage on mount
+  // Load real transactions from localStorage on mount
   useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_TX_KEY);
       if (stored) {
         setTransactions(JSON.parse(stored));
       } else {
-        setTransactions(initialDemoTransactions);
-        localStorage.setItem(STORAGE_TX_KEY, JSON.stringify(initialDemoTransactions));
+        setTransactions([]);
       }
     } catch {
-      setTransactions(initialDemoTransactions);
+      setTransactions([]);
     }
   }, []);
 
-  // Save transactions to localStorage when updated
-  const saveTxList = (list: TransactionItem[]) => {
-    setTransactions(list);
-    try {
-      localStorage.setItem(STORAGE_TX_KEY, JSON.stringify(list));
-    } catch (e) {
-      console.error('Failed to save transactions to localStorage', e);
-    }
-  };
-
-  // Add a new transaction
+  // Add a new real transaction
   const addTransaction = useCallback(
     (txData: Omit<TransactionItem, 'id' | 'timestamp' | 'status' | 'explorerUrl'>): string => {
       const id = `tx-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
@@ -154,10 +103,12 @@ export function TransactionProvider({ children }: { children: React.ReactNode })
     []
   );
 
-  // Clear all transactions
+  // Clear transactions
   const clearTransactions = useCallback(() => {
     setTransactions([]);
-    localStorage.removeItem(STORAGE_TX_KEY);
+    try {
+      localStorage.removeItem(STORAGE_TX_KEY);
+    } catch {}
   }, []);
 
   return (

@@ -4,8 +4,7 @@
 // MediChain Hospital Action Center (/hospital)
 // ============================================================
 // Inter-Hospital Health Data Exchange Portal powered by Soroban Smart Contracts.
-// Level 3 Production Standards: Inter-contract cross-calls, mobile-responsive,
-// abstracted custom hooks, and StellarWalletsKit.
+// Role-guarded for authorized Hospital Nodes.
 // ============================================================
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -34,23 +33,23 @@ import {
   Check,
   FileCheck,
   FileUp,
-  ArrowLeft,
   Ban,
+  ShieldAlert,
+  UserCheck,
 } from 'lucide-react';
 
 import type {
-  HospitalContext,
   PatientRecord,
   AccessRequest,
   FetchedMedicalData,
 } from '../../types/medichain';
 
+import { useAuth } from '../../context/AuthContext';
 import { useWallet } from '../../context/WalletContext';
 import { useStellar } from '../../hooks/useStellar';
-import { CORE_CONTRACT_ID, REGISTRY_CONTRACT_ID } from '../../services/stellar';
+import { CORE_CONTRACT_ID } from '../../services/stellar';
 
 import {
-  seedDemoRecords,
   simulateIPFSUpload,
   simulateIPFSFetch,
   getRecordByCidOrPatientId,
@@ -58,34 +57,6 @@ import {
   computeFileSHA256,
   type UploadedFileData,
 } from '../../utils/ipfsMock';
-
-// ============================================================
-// DEMO HOSPITAL CONFIG
-// ============================================================
-const HOSPITALS = {
-  bangalore: {
-    id: 'bangalore' as HospitalContext,
-    name: 'Apollo Hospitals',
-    shortName: 'Apollo Bangalore',
-    location: 'Bangalore, KA',
-    fullLabel: 'Apollo Hospitals — Bangalore',
-    color: 'cyan',
-    gradient: 'from-cyan-600 to-teal-500',
-    border: 'border-cyan-500/40',
-    glow: 'shadow-cyan-500/20',
-  },
-  jabalpur: {
-    id: 'jabalpur' as HospitalContext,
-    name: 'AIIMS',
-    shortName: 'AIIMS Jabalpur',
-    location: 'Jabalpur, MP',
-    fullLabel: 'AIIMS — Jabalpur',
-    color: 'violet',
-    gradient: 'from-violet-600 to-purple-500',
-    border: 'border-violet-500/40',
-    glow: 'shadow-violet-500/20',
-  },
-} as const;
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return '0 Bytes';
@@ -95,10 +66,8 @@ function formatBytes(bytes: number): string {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
-// ============================================================
-// MAIN HOSPITAL DASHBOARD
-// ============================================================
 export default function HospitalDashboard() {
+  const { user } = useAuth();
   const { wallet, openWalletModal } = useWallet();
   const {
     uploadRecord,
@@ -109,39 +78,15 @@ export default function HospitalDashboard() {
     isExecuting,
   } = useStellar();
 
-  // ── Context Switcher ──────────────────────────────────────
-  const [context, setContext] = useState<HospitalContext>('bangalore');
   const [activeTab, setActiveTab] = useState<'upload' | 'requests' | 'approved'>('upload');
-  const [contextDropdownOpen, setContextDropdownOpen] = useState(false);
-  const hosp = HOSPITALS[context];
 
-  // ── Records & Requests State ──────────────────────────────
-  const [bangaloreRecords, setBangaloreRecords] = useState<PatientRecord[]>([
-    {
-      patientId: 'PAT-001-BLR',
-      patientName: 'Arjun Mehta',
-      category: 'Blood Diagnostics',
-      ipfsCid: 'QmMediChainBLD001BangaloreArjunBloodReport2024',
-      owningHospitalName: 'Apollo Hospitals, Bangalore',
-      uploadedAt: Date.now() - 86400000 * 5,
-      txHash: '1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b',
-    },
-    {
-      patientId: 'PAT-002-BLR',
-      patientName: 'Priya Nair',
-      category: 'Cardiology ECG',
-      ipfsCid: 'QmMediChainCRD002BanglorePrivaCardiologyECG2024',
-      owningHospitalName: 'Apollo Hospitals, Bangalore',
-      uploadedAt: Date.now() - 86400000 * 3,
-      txHash: '2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c',
-    },
-  ]);
-
+  // Records & Requests State
+  const [patientRecords, setPatientRecords] = useState<PatientRecord[]>([]);
   const [accessRequests, setAccessRequests] = useState<AccessRequest[]>([]);
   const [fetchedData, setFetchedData] = useState<Record<string, FetchedMedicalData>>({});
   const [fetchingCid, setFetchingCid] = useState<string | null>(null);
 
-  // ── Upload Form State ─────────────────────────────────────
+  // Upload Form State
   const [uploadPatientId, setUploadPatientId] = useState('');
   const [uploadPatientName, setUploadPatientName] = useState('');
   const [uploadCategory, setUploadCategory] = useState<PatientRecord['category']>('Blood Diagnostics');
@@ -153,15 +98,11 @@ export default function HospitalDashboard() {
   const [fileData, setFileData] = useState<UploadedFileData | null>(null);
   const [isHashingFile, setIsHashingFile] = useState(false);
 
-  // ── Request Form State ────────────────────────────────────
+  // Request Form State
   const [reqPatientId, setReqPatientId] = useState('');
   const [reqReason, setReqReason] = useState('');
 
-  useEffect(() => {
-    seedDemoRecords();
-  }, []);
-
-  // ── Live SHA-256 preview ──────────────────────────────────
+  // Live SHA-256 preview
   useEffect(() => {
     if (fileData) {
       setLiveHash(fileData.fileHash);
@@ -172,7 +113,7 @@ export default function HospitalDashboard() {
     }
   }, [uploadPatientId, uploadCategory, uploadFindings, fileData]);
 
-  // ── Native WebCrypto Hashing ──────────────────────────────
+  // Native WebCrypto Hashing
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) {
@@ -197,7 +138,7 @@ export default function HospitalDashboard() {
     }
   };
 
-  // ── Action: Upload Record (enforces cross-contract check) ──
+  // Action: Upload Record
   const handleUploadRecord = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!wallet.isConnected || !wallet.address) {
@@ -213,8 +154,8 @@ export default function HospitalDashboard() {
         category: uploadCategory as any,
         findings: uploadFindings,
         vitals: uploadVitals ? { Notes: uploadVitals } : { bloodPressure: 'Normal' },
-        physician: `Physician at ${hosp.name}`,
-        hospitalName: hosp.fullLabel,
+        physician: `Physician at ${user.hospitalName || 'Hospital Node'}`,
+        hospitalName: user.hospitalName || 'Hospital Node',
         uploadedAt: Date.now(),
         fileData: fileData || undefined,
       });
@@ -227,14 +168,14 @@ export default function HospitalDashboard() {
           patientName: uploadPatientName,
           category: uploadCategory,
           ipfsCid: cid,
-          owningHospitalName: hosp.fullLabel,
+          owningHospitalName: user.hospitalName || 'Hospital Node',
           owningHospitalWallet: wallet.address,
           uploadedAt: Date.now(),
           txHash: res.txHash,
           fileData: fileData || undefined,
         };
 
-        setBangaloreRecords((prev) => [newRecord, ...prev]);
+        setPatientRecords((prev) => [newRecord, ...prev]);
         setUploadPatientId('');
         setUploadPatientName('');
         setUploadFindings('');
@@ -248,7 +189,7 @@ export default function HospitalDashboard() {
     }
   };
 
-  // ── Action: Request Access ────────────────────────────────
+  // Action: Request Access
   const handleRequestAccess = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!wallet.isConnected || !wallet.address) {
@@ -258,16 +199,16 @@ export default function HospitalDashboard() {
     if (!reqPatientId || !reqReason) return;
 
     const targetWallet =
-      bangaloreRecords.find((r) => r.patientId === reqPatientId)?.owningHospitalWallet || wallet.address;
+      patientRecords.find((r) => r.patientId === reqPatientId)?.owningHospitalWallet || wallet.address;
 
     const res = await requestAccess(wallet.address, targetWallet, reqPatientId, reqReason);
 
     if (res.success && res.txHash) {
       const newReq: AccessRequest = {
         id: `REQ-${Math.floor(1000 + Math.random() * 9000)}`,
-        requestingHospitalName: hosp.fullLabel,
+        requestingHospitalName: user.hospitalName || 'Hospital Node',
         requestingHospitalWallet: wallet.address,
-        targetHospitalName: HOSPITALS.bangalore.fullLabel,
+        targetHospitalName: 'Target Hospital Node',
         targetHospitalWallet: targetWallet,
         patientId: reqPatientId,
         patientName: 'Patient ' + reqPatientId,
@@ -283,7 +224,7 @@ export default function HospitalDashboard() {
     }
   };
 
-  // ── Action: Approve Access ────────────────────────────────
+  // Action: Approve Access
   const handleApproveAccess = async (request: AccessRequest) => {
     if (!wallet.address) return;
 
@@ -300,7 +241,7 @@ export default function HospitalDashboard() {
     }
   };
 
-  // ── Action: Reject Access ────────────────────────────────
+  // Action: Reject Access
   const handleRejectAccess = async (request: AccessRequest) => {
     if (!wallet.address) return;
 
@@ -313,7 +254,7 @@ export default function HospitalDashboard() {
     }
   };
 
-  // ── Action: View / Fetch Approved Record ──────────────────
+  // Action: View Record
   const handleViewRecord = async (request: AccessRequest) => {
     if (!wallet.address) return;
 
@@ -353,68 +294,52 @@ export default function HospitalDashboard() {
     }
   };
 
+  // Role Guarding: Require Hospital Node authentication
+  if (user.role !== 'hospital') {
+    return (
+      <div className="min-h-[80vh] flex flex-col items-center justify-center p-6 text-center bg-[#070D1F]">
+        <div className="max-w-md space-y-4 glass-panel bg-[#0B132B] p-8 rounded-3xl border border-slate-800 shadow-2xl">
+          <div className="w-12 h-12 rounded-2xl bg-[#0F172A] border border-cyan-500/30 flex items-center justify-center text-cyan-400 mx-auto">
+            <Building2 className="w-6 h-6" />
+          </div>
+          <h2 className="text-xl font-bold text-white">Hospital Node Access Required</h2>
+          <p className="text-xs text-slate-400">
+            You must be logged in as a verified Healthcare Institution Node to access patient records and request controls.
+          </p>
+          <Link
+            href="/login"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-cyan-600 to-teal-500 hover:from-cyan-500 hover:to-teal-400 text-slate-950 font-bold rounded-xl text-xs shadow-lg transition-all w-full"
+          >
+            <UserCheck className="w-4 h-4" />
+            <span>Go to Portal Login</span>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   const pendingRequests = accessRequests.filter((r) => r.status === 'Pending');
   const approvedRequests = accessRequests.filter((r) => r.status === 'Approved');
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 font-sans">
+    <div className="min-h-screen flex flex-col bg-[#070D1F] text-slate-100 font-sans">
       {/* Background glow */}
       <div className="fixed top-0 left-1/4 w-[600px] h-[600px] bg-cyan-500/5 rounded-full blur-3xl pointer-events-none -z-10" />
 
-      {/* SUB-HEADER BANNER */}
-      <div className="bg-slate-900/90 border-b border-slate-800 px-4 sm:px-6 py-2.5">
+      {/* SUB-HEADER */}
+      <div className="bg-[#0B132B] border-b border-slate-800 px-4 sm:px-6 py-3">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2 text-xs">
-          
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 text-cyan-300">
-              <Building2 className="w-4 h-4 text-cyan-400" />
-              <span className="font-bold">Active Node: {hosp.fullLabel}</span>
-            </div>
-
-            {/* DEMO CONTEXT SWITCHER DROPDOWN */}
-            <div className="relative" onClick={(e) => e.stopPropagation()}>
-              <button
-                onClick={() => setContextDropdownOpen((v) => !v)}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 hover:border-cyan-500/40 text-[11px] font-semibold text-slate-300 transition-all"
-              >
-                <span>Switch View ({hosp.shortName})</span>
-                <ChevronDown className="w-3 h-3 text-slate-400" />
-              </button>
-
-              {contextDropdownOpen && (
-                <div className="absolute top-full left-0 mt-2 w-64 glass-panel border border-slate-700 rounded-xl shadow-2xl overflow-hidden z-50">
-                  <div className="p-2.5 border-b border-slate-800">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Demo Context Switcher</p>
-                  </div>
-                  {(['bangalore', 'jabalpur'] as HospitalContext[]).map((id) => (
-                    <button
-                      key={id}
-                      onClick={() => {
-                        setContext(id);
-                        setContextDropdownOpen(false);
-                      }}
-                      className={`w-full flex items-center gap-2.5 p-2.5 text-left hover:bg-slate-800/80 text-xs ${context === id ? 'bg-slate-800 text-cyan-300 font-bold' : 'text-slate-300'}`}
-                    >
-                      <Building2 className="w-4 h-4 text-cyan-400" />
-                      <div>
-                        <p>{HOSPITALS[id].fullLabel}</p>
-                        <p className="text-[10px] text-slate-500">{HOSPITALS[id].location}</p>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+          <div className="flex items-center gap-2 text-cyan-300">
+            <Building2 className="w-4 h-4 text-cyan-400" />
+            <span className="font-bold text-white">Node: {user.hospitalName || user.username}</span>
+            <span className="text-slate-600">•</span>
+            <span className="font-mono text-[11px] text-slate-400">Core Contract: {CORE_CONTRACT_ID.slice(0, 12)}...</span>
           </div>
 
-          <div className="flex items-center gap-3 font-mono text-[11px] text-slate-400">
-            <span>Core Contract: {CORE_CONTRACT_ID.slice(0, 10)}...</span>
-            <Link href="/transactions" className="text-cyan-400 hover:underline flex items-center gap-1">
-              <span>View Activity Log</span>
-              <ExternalLink className="w-3 h-3" />
-            </Link>
-          </div>
-
+          <Link href="/transactions" className="text-cyan-400 hover:underline flex items-center gap-1 font-mono text-[11px]">
+            <span>Activity Log</span>
+            <ExternalLink className="w-3 h-3" />
+          </Link>
         </div>
       </div>
 
@@ -425,7 +350,7 @@ export default function HospitalDashboard() {
         <div className="flex border-b border-slate-800 gap-4 sm:gap-8 overflow-x-auto">
           <button
             onClick={() => setActiveTab('upload')}
-            className={`pb-3 text-xs sm:text-sm font-semibold flex items-center gap-2 border-b-2 whitespace-nowrap transition-all ${
+            className={`pb-3 text-xs sm:text-sm font-bold flex items-center gap-2 border-b-2 whitespace-nowrap transition-all ${
               activeTab === 'upload' ? 'text-cyan-400 border-cyan-400' : 'text-slate-400 border-transparent'
             }`}
           >
@@ -434,21 +359,21 @@ export default function HospitalDashboard() {
           </button>
           <button
             onClick={() => setActiveTab('requests')}
-            className={`pb-3 text-xs sm:text-sm font-semibold flex items-center gap-2 border-b-2 whitespace-nowrap transition-all ${
+            className={`pb-3 text-xs sm:text-sm font-bold flex items-center gap-2 border-b-2 whitespace-nowrap transition-all ${
               activeTab === 'requests' ? 'text-cyan-400 border-cyan-400' : 'text-slate-400 border-transparent'
             }`}
           >
             <Share2 className="w-4 h-4" />
-            Action Center (Requests)
+            Action Center (Requests Queue)
             {pendingRequests.length > 0 && (
-              <span className="bg-amber-500 text-slate-950 text-[10px] font-extrabold px-1.5 py-0.5 rounded-full">
+              <span className="bg-cyan-500 text-slate-950 text-[10px] font-extrabold px-2 py-0.5 rounded-full">
                 {pendingRequests.length}
               </span>
             )}
           </button>
           <button
             onClick={() => setActiveTab('approved')}
-            className={`pb-3 text-xs sm:text-sm font-semibold flex items-center gap-2 border-b-2 whitespace-nowrap transition-all ${
+            className={`pb-3 text-xs sm:text-sm font-bold flex items-center gap-2 border-b-2 whitespace-nowrap transition-all ${
               activeTab === 'approved' ? 'text-cyan-400 border-cyan-400' : 'text-slate-400 border-transparent'
             }`}
           >
@@ -457,32 +382,31 @@ export default function HospitalDashboard() {
           </button>
         </div>
 
-        {/* ── TAB 1: UPLOAD RECORD WITH NATIVE FILE HASHING ── */}
+        {/* TAB 1: UPLOAD RECORD */}
         {activeTab === 'upload' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             
-            {/* Upload Form */}
-            <div className="lg:col-span-5 glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
+            {/* Form */}
+            <div className="lg:col-span-5 glass-panel bg-[#0B132B] p-6 rounded-3xl border border-slate-800 space-y-4">
               <div className="border-b border-slate-800 pb-3">
                 <h2 className="text-base font-bold text-white flex items-center gap-2">
                   <FileUp className="w-5 h-5 text-cyan-400" />
                   Upload &amp; Hash Medical Report
                 </h2>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Select a PDF/Image. WebCrypto computes binary SHA-256 hash. Cross-contract call verifies Govt Registry whitelist.
+                  WebCrypto computes binary SHA-256 hash. Cross-contract call verifies Govt Registry whitelist before committing on-chain.
                 </p>
               </div>
 
               <form onSubmit={handleUploadRecord} className="space-y-4">
-                {/* File picker */}
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-300 mb-1 uppercase tracking-wider">
                     Medical Report File (PDF / Image)
                   </label>
                   <div
                     onClick={() => fileInputRef.current?.click()}
-                    className={`border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-all ${
-                      fileData ? 'border-emerald-500/50 bg-emerald-950/20' : 'border-slate-700 bg-slate-900/60'
+                    className={`border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition-all ${
+                      fileData ? 'border-emerald-500/50 bg-emerald-950/20' : 'border-slate-800 bg-[#0F172A]'
                     }`}
                   >
                     <input
@@ -529,29 +453,29 @@ export default function HospitalDashboard() {
                       placeholder="PAT-001-BLR"
                       value={uploadPatientId}
                       onChange={(e) => setUploadPatientId(e.target.value)}
-                      className="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-cyan-500"
+                      className="w-full bg-[#0F172A] border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-cyan-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-300 mb-1 uppercase tracking-wider">Patient Full Name</label>
+                    <label className="block text-[11px] font-semibold text-slate-300 mb-1 uppercase tracking-wider">Patient Name</label>
                     <input
                       type="text"
                       required
                       placeholder="Arjun Mehta"
                       value={uploadPatientName}
                       onChange={(e) => setUploadPatientName(e.target.value)}
-                      className="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500"
+                      className="w-full bg-[#0F172A] border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-300 mb-1 uppercase tracking-wider">Diagnostic Category</label>
+                  <label className="block text-[11px] font-semibold text-slate-300 mb-1 uppercase tracking-wider">Category</label>
                   <select
                     value={uploadCategory}
                     onChange={(e) => setUploadCategory(e.target.value as any)}
-                    className="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500"
+                    className="w-full bg-[#0F172A] border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500"
                   >
                     <option value="Blood Diagnostics">Blood Diagnostics (Haematology)</option>
                     <option value="Cardiology ECG">Cardiology ECG / Echo</option>
@@ -562,23 +486,22 @@ export default function HospitalDashboard() {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-300 mb-1 uppercase tracking-wider">Clinical Findings / Report Summary</label>
+                  <label className="block text-[11px] font-semibold text-slate-300 mb-1 uppercase tracking-wider">Report Summary</label>
                   <textarea
                     rows={2}
                     required
-                    placeholder="e.g. Hemoglobin 14.2 g/dL, Platelets 250,000/mcL. All parameters normal."
+                    placeholder="e.g. Hemoglobin 14.2 g/dL, Platelets 250,000/mcL."
                     value={uploadFindings}
                     onChange={(e) => setUploadFindings(e.target.value)}
-                    className="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500 resize-none"
+                    className="w-full bg-[#0F172A] border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500 resize-none"
                   />
                 </div>
 
-                {/* SHA-256 Hash Preview */}
                 {liveHash && (
-                  <div className="p-3 bg-slate-900/90 border border-slate-800 rounded-xl space-y-1">
+                  <div className="p-3 bg-[#0F172A] border border-slate-800 rounded-xl space-y-1">
                     <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider flex items-center justify-between">
                       <span>Native WebCrypto SHA-256 Hash</span>
-                      <span className="text-emerald-400 font-mono">256-bit</span>
+                      <span className="text-cyan-400 font-mono">256-bit</span>
                     </p>
                     <p className="font-mono text-[10px] text-cyan-300 break-all bg-slate-950 p-1.5 rounded border border-slate-800">
                       {liveHash}
@@ -594,7 +517,7 @@ export default function HospitalDashboard() {
                   {isExecuting ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Verifying Govt Whitelist &amp; Signing...</span>
+                      <span>Signing Transaction...</span>
                     </>
                   ) : !wallet.isConnected ? (
                     <>
@@ -611,88 +534,97 @@ export default function HospitalDashboard() {
               </form>
             </div>
 
-            {/* Published Records List */}
+            {/* List */}
             <div className="lg:col-span-7 space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-base font-bold text-white flex items-center gap-2">
                   <Database className="w-5 h-5 text-cyan-400" />
-                  On-Chain Patient Record Hashes
+                  On-Chain Record Hashes
                 </h2>
-                <span className="text-xs text-slate-400 font-mono">{bangaloreRecords.length} Records Persisted</span>
+                <span className="text-xs text-slate-400 font-mono">{patientRecords.length} Records</span>
               </div>
 
-              <div className="space-y-3">
-                {bangaloreRecords.map((rec, i) => (
-                  <div key={i} className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-3">
-                    <div className="flex items-start justify-between flex-wrap gap-2">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-xs font-bold text-cyan-300">{rec.patientId}</span>
-                          <span className="text-slate-500">•</span>
-                          <span className="text-sm font-bold text-white">{rec.patientName}</span>
+              {patientRecords.length === 0 ? (
+                <div className="glass-panel bg-[#0B132B] p-10 rounded-3xl border border-slate-800 text-center space-y-2">
+                  <Database className="w-8 h-8 text-slate-600 mx-auto" />
+                  <p className="text-xs text-slate-400">
+                    No medical records uploaded yet for this node session. Upload a PDF/Image report to anchor its hash on-chain.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {patientRecords.map((rec, i) => (
+                    <div key={i} className="glass-panel bg-[#0B132B] p-5 rounded-2xl border border-slate-800 space-y-3">
+                      <div className="flex items-start justify-between flex-wrap gap-2">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-xs font-bold text-cyan-300">{rec.patientId}</span>
+                            <span className="text-slate-600">•</span>
+                            <span className="text-sm font-bold text-white">{rec.patientName}</span>
+                          </div>
+                          <p className="text-xs text-slate-400 mt-0.5">{rec.category}</p>
                         </div>
-                        <p className="text-xs text-slate-400 mt-0.5">{rec.category}</p>
+
+                        <span className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 rounded-full flex items-center gap-1">
+                          <Lock className="w-3 h-3" />
+                          CID Hash On-Chain
+                        </span>
                       </div>
 
-                      <span className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 rounded-full flex items-center gap-1">
-                        <Lock className="w-3 h-3" />
-                        CID Hash On-Chain
-                      </span>
-                    </div>
+                      <div className="bg-[#0F172A] p-3 rounded-xl border border-slate-800 space-y-1.5 font-mono text-xs">
+                        <p className="text-[10px] text-slate-500 uppercase tracking-wider font-sans">IPFS CID Hash:</p>
+                        <p className="text-cyan-300 text-[11px] break-all">{rec.ipfsCid}</p>
+                      </div>
 
-                    <div className="bg-slate-900/90 p-3 rounded-xl border border-slate-800/80 space-y-1.5 font-mono text-xs">
-                      <p className="text-[10px] text-slate-500 uppercase tracking-wider font-sans">IPFS CID Hash:</p>
-                      <p className="text-cyan-300 text-[11px] break-all">{rec.ipfsCid}</p>
+                      <div className="flex items-center justify-between text-[10px] text-slate-500 font-mono pt-1">
+                        <span>Uploaded: {new Date(rec.uploadedAt).toLocaleDateString()}</span>
+                        <a
+                          href={`https://stellar.expert/explorer/testnet/tx/${rec.txHash}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-cyan-400 hover:underline flex items-center gap-1"
+                        >
+                          <span>Tx: {rec.txHash.slice(0, 10)}...</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      </div>
                     </div>
-
-                    <div className="flex items-center justify-between text-[10px] text-slate-500 font-mono pt-1">
-                      <span>Uploaded: {new Date(rec.uploadedAt).toLocaleDateString()}</span>
-                      <a
-                        href={`https://stellar.expert/explorer/testnet/tx/${rec.txHash}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-cyan-400 hover:underline flex items-center gap-1"
-                      >
-                        <span>Tx: {rec.txHash.slice(0, 10)}...</span>
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
 
           </div>
         )}
 
-        {/* ── TAB 2: ACTION CENTER (REQUESTS) ── */}
+        {/* TAB 2: REQUESTS QUEUE */}
         {activeTab === 'requests' && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-bold text-white flex items-center gap-2">
                   <Share2 className="w-5 h-5 text-cyan-400" />
-                  Inter-Hospital Access Request Queue
+                  Access Request Queue
                 </h2>
                 <p className="text-xs text-slate-400">
-                  Review &amp; approve/reject data sharing requests from authorized hospitals on Soroban.
+                  Review &amp; approve/reject inter-hospital sharing requests logged on Soroban.
                 </p>
               </div>
               <span className="text-xs text-slate-400 font-mono">{accessRequests.length} Total Requests</span>
             </div>
 
             {accessRequests.length === 0 ? (
-              <div className="glass-panel p-12 rounded-2xl border border-slate-800 text-center space-y-3">
+              <div className="glass-panel bg-[#0B132B] p-12 rounded-3xl border border-slate-800 text-center space-y-3">
                 <Share2 className="w-10 h-10 text-slate-600 mx-auto" />
-                <h3 className="text-base font-bold text-white">No Pending Access Requests</h3>
+                <h3 className="text-base font-bold text-white">No Access Requests in Queue</h3>
                 <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                  When another authorized hospital requests access to a patient record, it will appear here for your approval.
+                  When another authorized hospital node requests access to a patient record, it will appear here for on-chain approval.
                 </p>
               </div>
             ) : (
               <div className="space-y-3">
                 {accessRequests.map((req) => (
-                  <div key={req.id} className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-4">
+                  <div key={req.id} className="glass-panel bg-[#0B132B] p-5 rounded-2xl border border-slate-800 space-y-4">
                     <div className="flex items-start justify-between flex-wrap gap-3">
                       <div>
                         <div className="flex items-center gap-2">
@@ -713,19 +645,19 @@ export default function HospitalDashboard() {
                               ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
                               : req.status === 'Rejected'
                               ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
-                              : 'bg-amber-500/10 text-amber-300 border-amber-500/30'
+                              : 'bg-cyan-500/10 text-cyan-300 border-cyan-500/30'
                           }
                         `}
                       >
                         {req.status === 'Approved' && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />}
                         {req.status === 'Rejected' && <Ban className="w-3.5 h-3.5 text-rose-400" />}
-                        {req.status === 'Pending' && <Clock className="w-3.5 h-3.5 text-amber-400" />}
+                        {req.status === 'Pending' && <Clock className="w-3.5 h-3.5 text-cyan-400" />}
                         {req.status}
                       </span>
                     </div>
 
                     {req.status === 'Pending' && (
-                      <div className="flex items-center gap-3 pt-2 border-t border-slate-800/80">
+                      <div className="flex items-center gap-3 pt-2 border-t border-slate-800">
                         <button
                           onClick={() => handleApproveAccess(req)}
                           disabled={isExecuting}
@@ -737,7 +669,7 @@ export default function HospitalDashboard() {
                         <button
                           onClick={() => handleRejectAccess(req)}
                           disabled={isExecuting}
-                          className="px-4 py-2 bg-slate-900 hover:bg-rose-950/40 border border-slate-700 hover:border-rose-500/40 text-rose-400 font-bold rounded-xl text-xs transition-all flex items-center gap-1.5"
+                          className="px-4 py-2 bg-[#0F172A] hover:bg-rose-950/40 border border-slate-700 hover:border-rose-500/40 text-rose-400 font-bold rounded-xl text-xs transition-all flex items-center gap-1.5"
                         >
                           <Ban className="w-4 h-4" />
                           <span>Reject Request</span>
@@ -751,19 +683,19 @@ export default function HospitalDashboard() {
           </div>
         )}
 
-        {/* ── TAB 3: REQUEST DATA & VIEW APPROVED FILES ── */}
+        {/* TAB 3: APPROVED DATA & VIEWER */}
         {activeTab === 'approved' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             
-            {/* Request Access Form */}
-            <div className="lg:col-span-5 glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
+            {/* Request Form */}
+            <div className="lg:col-span-5 glass-panel bg-[#0B132B] p-6 rounded-3xl border border-slate-800 space-y-4">
               <div className="border-b border-slate-800 pb-3">
                 <h2 className="text-base font-bold text-white flex items-center gap-2">
                   <Share2 className="w-5 h-5 text-cyan-400" />
-                  Request Patient Data Access
+                  Request Patient Record Access
                 </h2>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Submit an inter-hospital request to access records owned by another hospital node.
+                  Submit an inter-hospital request to access records owned by another node.
                 </p>
               </div>
 
@@ -778,33 +710,33 @@ export default function HospitalDashboard() {
                     placeholder="PAT-001-BLR"
                     value={reqPatientId}
                     onChange={(e) => setReqPatientId(e.target.value)}
-                    className="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-cyan-500"
+                    className="w-full bg-[#0F172A] border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-cyan-500"
                   />
                 </div>
 
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-300 mb-1 uppercase tracking-wider">
-                    Clinical Emergency / Referral Reason
+                    Clinical Reason
                   </label>
                   <textarea
                     rows={3}
                     required
-                    placeholder="e.g. Patient transferred to AIIMS Jabalpur for urgent cardiac intervention. Need prior ECG & blood diagnostics."
+                    placeholder="e.g. Urgent cardiology consult for transferred patient."
                     value={reqReason}
                     onChange={(e) => setReqReason(e.target.value)}
-                    className="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-500 resize-none"
+                    className="w-full bg-[#0F172A] border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-500 resize-none"
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={isExecuting}
-                  className="w-full py-3 bg-gradient-to-r from-violet-600 to-purple-500 hover:from-violet-500 hover:to-purple-400 disabled:from-slate-700 disabled:to-slate-700 text-white font-bold rounded-xl shadow-lg shadow-purple-500/20 disabled:shadow-none transition-all flex items-center justify-center gap-2 text-xs sm:text-sm"
+                  className="w-full py-3 bg-gradient-to-r from-cyan-600 to-teal-500 hover:from-cyan-500 hover:to-teal-400 disabled:from-slate-700 disabled:to-slate-700 text-slate-950 font-bold rounded-xl shadow-lg shadow-cyan-500/20 disabled:shadow-none transition-all flex items-center justify-center gap-2 text-xs sm:text-sm"
                 >
                   {isExecuting ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Logging Request On-Chain...</span>
+                      <span>Submitting Request...</span>
                     </>
                   ) : !wallet.isConnected ? (
                     <>
@@ -814,28 +746,28 @@ export default function HospitalDashboard() {
                   ) : (
                     <>
                       <Share2 className="w-4 h-4" />
-                      <span>Submit Request On-Chain</span>
+                      <span>Submit Access Request</span>
                     </>
                   )}
                 </button>
               </form>
             </div>
 
-            {/* Approved Data & File Viewer */}
+            {/* Approved Viewer */}
             <div className="lg:col-span-7 space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-base font-bold text-white flex items-center gap-2">
                   <Eye className="w-5 h-5 text-cyan-400" />
-                  View Record (Access Controlled)
+                  View Record (RBAC Verified)
                 </h2>
-                <span className="text-xs text-slate-400 font-mono">RBAC Verified</span>
+                <span className="text-xs text-slate-400 font-mono">On-Chain Controlled</span>
               </div>
 
               {approvedRequests.length === 0 ? (
-                <div className="glass-panel p-8 rounded-2xl border border-slate-800 text-center space-y-2">
+                <div className="glass-panel bg-[#0B132B] p-8 rounded-3xl border border-slate-800 text-center space-y-2">
                   <Lock className="w-8 h-8 text-slate-600 mx-auto" />
                   <p className="text-xs text-slate-400">
-                    No approved access grants yet. Submit a request or approve one in the Action Center.
+                    No approved access grants yet. Submit an access request or approve one in the Action Center.
                   </p>
                 </div>
               ) : (
@@ -845,7 +777,7 @@ export default function HospitalDashboard() {
                     const isFetching = fetchingCid === req.patientId;
 
                     return (
-                      <div key={req.id} className="glass-panel p-5 rounded-2xl border border-emerald-500/30 space-y-4">
+                      <div key={req.id} className="glass-panel bg-[#0B132B] p-5 rounded-2xl border border-emerald-500/30 space-y-4">
                         <div className="flex items-center justify-between">
                           <div>
                             <span className="font-mono text-xs font-bold text-emerald-400">{req.patientId}</span>
@@ -860,7 +792,7 @@ export default function HospitalDashboard() {
                             {isFetching ? (
                               <>
                                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                <span>Verifying On-Chain RBAC...</span>
+                                <span>Verifying RBAC...</span>
                               </>
                             ) : (
                               <>
@@ -872,7 +804,7 @@ export default function HospitalDashboard() {
                         </div>
 
                         {data && (
-                          <div className="p-4 bg-slate-900/90 rounded-xl border border-slate-800 space-y-3 animate-in fade-in duration-200">
+                          <div className="p-4 bg-[#0F172A] rounded-xl border border-slate-800 space-y-3 animate-in fade-in duration-200">
                             <div className="flex items-center justify-between border-b border-slate-800 pb-2">
                               <span className="text-xs font-bold text-white">{data.category}</span>
                               <span className="text-[10px] font-mono text-cyan-400">{data.physician}</span>

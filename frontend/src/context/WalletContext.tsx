@@ -1,10 +1,10 @@
 'use client';
 
 // ============================================================
-// MediChain Wallet Context — Stellar Wallets Kit Integration
+// MediChain Wallet Context — Enterprise Stellar Wallets Kit Integration
 // ============================================================
-// Provides multi-wallet support (Freighter, Albedo, xBull, Hana, Lobstr)
-// with session persistence, network checking, and unified signing.
+// Supports Freighter, Albedo, xBull, Hana, and LOBSTR wallets.
+// Triggers native extension authorization popups and handles session persistence.
 // ============================================================
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
@@ -78,7 +78,6 @@ const initialWalletState: WalletState = {
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
 
-// Flag for global kit initialization
 let isKitInitialized = false;
 
 function ensureKitInitialized() {
@@ -96,7 +95,7 @@ function ensureKitInitialized() {
       });
       isKitInitialized = true;
     } catch (e) {
-      console.warn('StellarWalletsKit init warning:', e);
+      console.warn('StellarWalletsKit init notice:', e);
     }
   }
 }
@@ -113,17 +112,46 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     ensureKitInitialized();
   }, []);
 
-  // ── Connect Wallet via StellarWalletsKit ────────────────────
+  // ── Connect Wallet Function (Fixes Freighter extension popup) ────
   const connectWallet = useCallback(
     async (targetWalletId: string = FREIGHTER_ID) => {
       setIsConnecting(true);
       try {
         ensureKitInitialized();
-        await StellarWalletsKit.setWallet(targetWalletId);
 
-        const { address } = await StellarWalletsKit.getAddress();
+        let address = '';
+
+        if (targetWalletId === FREIGHTER_ID) {
+          const freighterApi = await import('@stellar/freighter-api');
+          const installed = await freighterApi.isConnected();
+          if (!installed) {
+            throw new Error(
+              'Freighter extension is not installed or enabled in browser. Please install Freighter from https://freighter.app and refresh.'
+            );
+          }
+
+          // Trigger Freighter extension popup directly
+          const keyResult: any = await freighterApi.requestAccess();
+          if (keyResult?.error) {
+            throw new Error(keyResult.error || 'User cancelled Freighter access request.');
+          }
+
+          address = typeof keyResult === 'string' ? keyResult : keyResult?.address || keyResult?.publicKey;
+
+          if (!address) {
+            const pubKeyRes: any = await freighterApi.getPublicKey();
+            address = typeof pubKeyRes === 'string' ? pubKeyRes : pubKeyRes?.publicKey || pubKeyRes?.address;
+          }
+
+          await StellarWalletsKit.setWallet(FREIGHTER_ID);
+        } else {
+          await StellarWalletsKit.setWallet(targetWalletId);
+          const fetchRes = await StellarWalletsKit.fetchAddress();
+          address = fetchRes.address;
+        }
+
         if (!address) {
-          throw new Error('Wallet connection returned empty address.');
+          throw new Error('Wallet returned empty public key address.');
         }
 
         const walletInfo = SUPPORTED_WALLETS.find((w) => w.id === targetWalletId);
@@ -141,18 +169,18 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem(STORAGE_WALLET_ID_KEY, targetWalletId);
         localStorage.setItem(STORAGE_WALLET_ADDR_KEY, address);
 
-        toast.success(`Connected to ${walletName} (${address.slice(0, 6)}...${address.slice(-4)})`, {
+        toast.success(`Wallet Connected: ${address.slice(0, 6)}...${address.slice(-4)}`, {
           duration: 4000,
         });
 
         setIsModalOpen(false);
       } catch (err: any) {
-        console.error('Wallet connect error:', err);
-        const errorMsg = err.message?.includes('User declined')
-          ? 'Connection request was cancelled in wallet.'
+        console.error('Wallet connection error:', err);
+        const humanMessage = err.message?.includes('declined') || err.message?.includes('cancelled')
+          ? 'Wallet connection rejected by user.'
           : err.message || 'Failed to connect wallet.';
 
-        toast.error(errorMsg, { duration: 5000 });
+        toast.error(humanMessage, { duration: 5000 });
       } finally {
         setIsConnecting(false);
       }
@@ -192,27 +220,45 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   const signTransaction = useCallback(
     async (txXdr: string): Promise<{ signedTxXdr: string }> => {
       if (!wallet.isConnected || !wallet.address || !wallet.walletId) {
-        toast.error('Please connect a wallet first.');
+        toast.error('Please connect your Stellar wallet first.');
         throw new Error('Wallet not connected');
       }
 
       try {
-        ensureKitInitialized();
-        await StellarWalletsKit.setWallet(wallet.walletId);
+        if (wallet.walletId === FREIGHTER_ID) {
+          const freighterApi = await import('@stellar/freighter-api');
+          const signRes: any = await freighterApi.signTransaction(txXdr, {
+            network: 'TESTNET',
+            networkPassphrase: STELLAR_PASSPHRASE,
+            accountToSign: wallet.address,
+          });
 
-        const result = await StellarWalletsKit.signTransaction(txXdr, {
-          networkPassphrase: STELLAR_PASSPHRASE,
-          address: wallet.address,
-        });
+          if (signRes?.error) {
+            throw new Error(signRes.error);
+          }
 
-        return { signedTxXdr: result.signedTxXdr };
+          const signedTxXdr = typeof signRes === 'string' ? signRes : signRes?.signedTxXdr || signRes;
+          if (!signedTxXdr || typeof signedTxXdr !== 'string') {
+            throw new Error('Freighter returned invalid signed XDR payload.');
+          }
+
+          return { signedTxXdr };
+        } else {
+          ensureKitInitialized();
+          await StellarWalletsKit.setWallet(wallet.walletId);
+          const result = await StellarWalletsKit.signTransaction(txXdr, {
+            networkPassphrase: STELLAR_PASSPHRASE,
+            address: wallet.address,
+          });
+
+          return { signedTxXdr: result.signedTxXdr };
+        }
       } catch (err: any) {
         console.error('Sign transaction error:', err);
-        if (err.message?.includes('declined') || err.message?.includes('rejected')) {
-          toast.error('Transaction was rejected by user in wallet.');
-        } else {
-          toast.error(err.message || 'Wallet signing failed.');
-        }
+        const msg = err.message?.includes('declined') || err.message?.includes('rejected')
+          ? 'Transaction signing was rejected by user.'
+          : err.message || 'Transaction signing failed.';
+        toast.error(msg);
         throw err;
       }
     },

@@ -7,3 +7,4 @@ All notable changes to the MediChain dApp will be documented in this file.
 - feat: Implement Registry smart contract for RBAC
 - test: Add Registry contract success and failure tests
 - feat: Implement Core Logic contract with cross-contract calls
+- test: Add Inter-contract communication integration tests

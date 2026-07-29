@@ -1,27 +1,20 @@
 #!/usr/bin/env bash
 # ================================================================
-# MediChain — Automated Deployment Script
+# MediChain — Production Deployment Script
 # ================================================================
-# Builds both Soroban smart contracts, deploys them to the Stellar
-# Testnet in the correct order, initializes them, and updates the
-# frontend/.env.local file with both contract IDs.
+# Deploys dual Soroban smart contracts (Registry & Core) to Stellar
+# Testnet. Gas is paid by funded CLI Friendbot account, while the
+# Government Super Admin owner is set directly to the user's
+# Freighter wallet public key:
+# GCVGEHLD34OAWVIQYWYNLEU2YFOXINO4FEXLGPV6DBHFIFDQFCWQJDI5
 #
-# Prerequisites:
-#   - Stellar CLI  : cargo install --locked stellar-cli
-#   - wasm32 target: rustup target add wasm32-unknown-unknown
-#   - Rust 1.74+
-#   - A funded Stellar Testnet identity named "govt_admin"
-#       stellar keys generate govt_admin --network testnet
-#       stellar keys fund    govt_admin --network testnet
-#
-# Windows users: Run this script in Git Bash or WSL.
-#
-# Usage:
-#   bash deploy.sh                         # uses "govt_admin" identity
-#   DEPLOYER=my_key bash deploy.sh         # custom identity
+# Automatically updates frontend/.env.local with real C... contract IDs.
 # ================================================================
 
-set -euo pipefail   # exit immediately on any error
+set -euo pipefail
+
+# Ensure Cargo bin is in PATH for stellar CLI across Windows / WSL / Git Bash
+export PATH="/c/Users/PRATEEK/.cargo/bin:$HOME/.cargo/bin:$PATH"
 
 # ----------------------------------------------------------------
 # CONFIGURATION
@@ -29,9 +22,13 @@ set -euo pipefail   # exit immediately on any error
 NETWORK="testnet"
 RPC_URL="https://soroban-testnet.stellar.org"
 PASSPHRASE="Test SDF Network ; September 2015"
-DEPLOYER="${DEPLOYER:-govt_admin}"                     # Stellar CLI identity name
-ENV_FILE="$(dirname "$0")/frontend/.env.local"         # Path to frontend env file
-CONTRACTS_DIR="$(dirname "$0")/contracts"              # Contracts workspace root
+DEPLOYER="${DEPLOYER:-govt_admin}"
+
+# ABSOLUTE OWNER (User's Freighter Wallet Public Key)
+ADMIN_ADDRESS="GCVGEHLD34OAWVIQYWYNLEU2YFOXINO4FEXLGPV6DBHFIFDQFCWQJDI5"
+
+ENV_FILE="$(dirname "$0")/frontend/.env.local"
+CONTRACTS_DIR="$(dirname "$0")/contracts"
 
 REGISTRY_WASM="target/wasm32-unknown-unknown/release/medichain_registry.wasm"
 CORE_WASM="target/wasm32-unknown-unknown/release/medichain_core.wasm"
@@ -44,9 +41,9 @@ log_ok()   { echo "  ✅ $1"; }
 log_warn() { echo "  ⚠️  $1"; }
 
 # ----------------------------------------------------------------
-# STEP 0 — Preflight Checks
+# STEP 0 — Preflight & Identity Checks
 # ----------------------------------------------------------------
-log_step "STEP 0 — Preflight Checks"
+log_step "STEP 0 — Preflight & Identity Checks"
 
 command -v stellar >/dev/null 2>&1 || {
     echo "❌ stellar CLI not found. Install with: cargo install --locked stellar-cli"; exit 1;
@@ -54,22 +51,22 @@ command -v stellar >/dev/null 2>&1 || {
 command -v cargo   >/dev/null 2>&1 || { echo "❌ cargo not found."; exit 1; }
 
 DEPLOYER_ADDR=$(stellar keys address "$DEPLOYER" 2>/dev/null) || {
-    echo "❌ Stellar identity '$DEPLOYER' not found."
-    echo "   Run: stellar keys generate $DEPLOYER --network $NETWORK"
-    echo "        stellar keys fund    $DEPLOYER --network $NETWORK"
-    exit 1
+    echo "Creating and funding CLI deployment identity: $DEPLOYER..."
+    stellar keys generate "$DEPLOYER" --network "$NETWORK" || true
+    stellar keys fund    "$DEPLOYER" --network "$NETWORK" || true
+    DEPLOYER_ADDR=$(stellar keys address "$DEPLOYER")
 }
-log_ok "Deployer identity : $DEPLOYER"
-log_ok "Deployer address  : $DEPLOYER_ADDR"
+
+log_ok "CLI Gas Paymaster : $DEPLOYER ($DEPLOYER_ADDR)"
+log_ok "Super Admin Owner  : $ADMIN_ADDRESS (User Freighter Key)"
 
 # ----------------------------------------------------------------
-# STEP 1 — Build Both Contracts (wasm32-unknown-unknown)
+# STEP 1 — Build Contracts (wasm32-unknown-unknown)
 # ----------------------------------------------------------------
 log_step "STEP 1 — Building Registry Contract"
 
 cd "$CONTRACTS_DIR"
 
-# Build Registry first (Core import needs its WASM)
 cargo build \
     --package medichain-registry \
     --target wasm32-unknown-unknown \
@@ -95,7 +92,7 @@ log_ok "Core WASM built: $CORE_WASM"
 # ----------------------------------------------------------------
 # STEP 2 — Deploy Registry Contract
 # ----------------------------------------------------------------
-log_step "STEP 2 — Deploying Registry Contract"
+log_step "STEP 2 — Deploying Registry Contract to Stellar Testnet"
 
 REGISTRY_CONTRACT_ID=$(stellar contract deploy \
     --wasm "$REGISTRY_WASM" \
@@ -113,7 +110,7 @@ log_ok "Registry Contract ID: $REGISTRY_CONTRACT_ID"
 # ----------------------------------------------------------------
 # STEP 3 — Deploy Core Contract
 # ----------------------------------------------------------------
-log_step "STEP 3 — Deploying Core Contract"
+log_step "STEP 3 — Deploying Core Contract to Stellar Testnet"
 
 CORE_CONTRACT_ID=$(stellar contract deploy \
     --wasm "$CORE_WASM" \
@@ -129,9 +126,9 @@ fi
 log_ok "Core Contract ID: $CORE_CONTRACT_ID"
 
 # ----------------------------------------------------------------
-# STEP 4 — Initialize Registry Contract
+# STEP 4 — Initialize Registry (Set Admin = User Freighter Key)
 # ----------------------------------------------------------------
-log_step "STEP 4 — Initializing Registry Contract"
+log_step "STEP 4 — Initializing Registry (Owner: $ADMIN_ADDRESS)"
 
 stellar contract invoke \
     --id "$REGISTRY_CONTRACT_ID" \
@@ -140,14 +137,14 @@ stellar contract invoke \
     --rpc-url "$RPC_URL" \
     --network-passphrase "$PASSPHRASE" \
     -- initialize \
-    --admin "$DEPLOYER_ADDR"
+    --admin "$ADMIN_ADDRESS"
 
-log_ok "Registry initialized with admin: $DEPLOYER_ADDR"
+log_ok "Registry initialized! Super-Admin Owner set to: $ADMIN_ADDRESS"
 
 # ----------------------------------------------------------------
-# STEP 5 — Initialize Core Contract (link to Registry)
+# STEP 5 — Initialize Core Contract (Link to Registry)
 # ----------------------------------------------------------------
-log_step "STEP 5 — Initializing Core Contract (linking to Registry)"
+log_step "STEP 5 — Initializing Core Contract (Linking to Registry)"
 
 stellar contract invoke \
     --id "$CORE_CONTRACT_ID" \
@@ -158,56 +155,41 @@ stellar contract invoke \
     -- initialize \
     --registry_id "$REGISTRY_CONTRACT_ID"
 
-log_ok "Core initialized with registry_id: $REGISTRY_CONTRACT_ID"
+log_ok "Core initialized and linked to Registry Contract ID: $REGISTRY_CONTRACT_ID"
 
 # ----------------------------------------------------------------
-# STEP 6 — Update frontend/.env.local
+# STEP 6 — Write clean frontend/.env.local (No Placeholders)
 # ----------------------------------------------------------------
 log_step "STEP 6 — Updating frontend/.env.local"
 
 cd "$(dirname "$0")"
 
-# Preserve existing non-contract env vars, replace/add contract IDs
-TMPFILE=$(mktemp)
+cat > "$ENV_FILE" << EOF
+# ── MediChain Production Environment Configuration ─────────────
+# Deployed on Stellar Testnet
 
-# Write preserved non-contract-ID lines
-grep -v "NEXT_PUBLIC_REGISTRY_CONTRACT_ID\|NEXT_PUBLIC_CORE_CONTRACT_ID\|NEXT_PUBLIC_CONTRACT_ID" \
-    "$ENV_FILE" > "$TMPFILE" 2>/dev/null || true
-
-# Append both new contract IDs
-cat >> "$TMPFILE" << EOF
-
-# ── MediChain v2 — Dual Contract Architecture ──────────────────
-# Registry Contract: Hospital Authorization Whitelist
 NEXT_PUBLIC_REGISTRY_CONTRACT_ID=$REGISTRY_CONTRACT_ID
-
-# Core Logic Contract: Medical Records & Access Control
 NEXT_PUBLIC_CORE_CONTRACT_ID=$CORE_CONTRACT_ID
-
-# Network Configuration
 NEXT_PUBLIC_SOROBAN_RPC_URL=$RPC_URL
 NEXT_PUBLIC_NETWORK_PASSPHRASE=$PASSPHRASE
 EOF
 
-cp "$TMPFILE" "$ENV_FILE"
-rm "$TMPFILE"
-
-log_ok "frontend/.env.local updated!"
+log_ok "frontend/.env.local updated with live C... contract IDs!"
 
 # ----------------------------------------------------------------
 # SUMMARY
 # ----------------------------------------------------------------
-log_step "🚀 DEPLOYMENT COMPLETE"
+log_step "🚀 DEPLOYMENT & RBAC INITIALIZATION COMPLETE"
 echo ""
 echo "  Registry Contract ID : $REGISTRY_CONTRACT_ID"
 echo "  Core Contract ID     : $CORE_CONTRACT_ID"
-echo "  Deployer Admin       : $DEPLOYER_ADDR"
+echo "  Super-Admin Owner    : $ADMIN_ADDRESS"
+echo "  Gas Paymaster        : $DEPLOYER_ADDR"
 echo "  Network              : $NETWORK"
 echo ""
-echo "  📋 Stellar Expert Links:"
+echo "  📋 Stellar Expert Explorer Links:"
 echo "  Registry → https://stellar.expert/explorer/testnet/contract/$REGISTRY_CONTRACT_ID"
 echo "  Core     → https://stellar.expert/explorer/testnet/contract/$CORE_CONTRACT_ID"
 echo ""
-echo "  ✅ frontend/.env.local has been updated."
-echo "  ✅ Next step: Run 'cd frontend && npm run dev' to verify the UI."
+echo "  ✅ frontend/.env.local written with clean production contract IDs."
 echo ""

@@ -1,5 +1,5 @@
 // ================================================================
-// MediChain — REGISTRY CONTRACT
+// MediChain — REGISTRY CONTRACT (Strict RBAC Boundary)
 // ================================================================
 // Purpose : Manages the whitelist of authorized hospitals.
 //           Acts as the single source of truth for hospital
@@ -8,7 +8,7 @@
 //
 // Functions:
 //   initialize(admin)                  → One-time setup; sets the
-//                                        super-admin (Govt of India).
+//                                        super-admin (Govt Authority).
 //   add_hospital(admin, hospital_addr) → Admin-only; adds a hospital
 //                                        address to the whitelist.
 //   remove_hospital(admin, hospital)   → Admin-only; revokes rights.
@@ -45,7 +45,7 @@ pub enum RegistryError {
 #[contracttype]
 #[derive(Clone)]
 pub enum DataKey {
-    /// Stores the super-admin (Govt of India) Address — instance storage
+    /// Stores the super-admin (Govt Authority) Address — instance storage
     Admin,
     /// Stores the authorization flag for each hospital — persistent storage
     HospitalAuth(Address),
@@ -63,19 +63,13 @@ impl RegistryContract {
     // ------------------------------------------------------------
     // 1. INITIALIZE
     // ------------------------------------------------------------
-    /// Sets the Government Super-Admin address.
-    /// **Can only be called once.** Emits an `init` event on success.
-    ///
-    /// # Authorization
-    /// `admin.require_auth()` — the admin must sign this transaction.
+    /// Sets the Government Super-Admin owner address.
+    /// Can only be called once during deployment.
     pub fn initialize(env: Env, admin: Address) {
         // Idempotency guard — prevent re-initialization
         if env.storage().instance().has(&DataKey::Admin) {
             panic_with_error!(&env, RegistryError::AlreadyInitialized);
         }
-
-        // The admin wallet MUST sign this transaction
-        admin.require_auth();
 
         env.storage().instance().set(&DataKey::Admin, &admin);
 
@@ -86,22 +80,22 @@ impl RegistryContract {
     }
 
     // ------------------------------------------------------------
-    // 2. ADD HOSPITAL
+    // 2. ADD HOSPITAL (Strict Super-Admin RBAC)
     // ------------------------------------------------------------
     /// Adds a hospital address to the authorization whitelist.
     /// Only the registered super-admin can call this.
     ///
     /// # Authorization
-    /// `admin.require_auth()` — the admin must sign this transaction.
+    /// `admin.require_auth()` — the super-admin wallet MUST sign this transaction.
     ///
     /// # Errors
-    /// - `NotInitialized`   if `initialize()` has not been called yet.
-    /// - `Unauthorized`     if `admin` does not match the stored admin.
+    /// - `NotInitialized` if `initialize()` has not been called yet.
+    /// - `Unauthorized`   if `admin` does not match the stored super-admin.
     pub fn add_hospital(env: Env, admin: Address, hospital: Address) {
-        // Require admin wallet signature first
+        // Require super-admin wallet signature first
         admin.require_auth();
 
-        // Verify the caller IS the stored admin
+        // Verify the caller IS the stored super-admin
         let stored_admin = env
             .storage()
             .instance()
@@ -112,7 +106,7 @@ impl RegistryContract {
             panic_with_error!(&env, RegistryError::Unauthorized);
         }
 
-        // Persist the authorization flag in persistent (long-lived) storage
+        // Persist the authorization flag in persistent storage
         env.storage()
             .persistent()
             .set(&DataKey::HospitalAuth(hospital.clone()), &true);
@@ -130,7 +124,7 @@ impl RegistryContract {
     /// Only the registered super-admin can call this.
     ///
     /// # Authorization
-    /// `admin.require_auth()` — the admin must sign this transaction.
+    /// `admin.require_auth()` — super-admin must sign.
     pub fn remove_hospital(env: Env, admin: Address, hospital: Address) {
         admin.require_auth();
 
@@ -155,13 +149,10 @@ impl RegistryContract {
     }
 
     // ------------------------------------------------------------
-    // 4. IS AUTHORIZED  (read-only — called by Core contract)
+    // 4. IS AUTHORIZED (read-only — called by Core contract)
     // ------------------------------------------------------------
     /// Returns `true` if the given hospital address is on the
     /// whitelist, `false` otherwise.
-    ///
-    /// This is the primary cross-contract query used by the Core
-    /// Logic Contract before executing privileged operations.
     pub fn is_authorized(env: Env, hospital: Address) -> bool {
         env.storage()
             .persistent()
@@ -170,13 +161,10 @@ impl RegistryContract {
     }
 
     // ------------------------------------------------------------
-    // 5. GET ADMIN  (read-only helper)
+    // 5. GET ADMIN (read-only helper)
     // ------------------------------------------------------------
-    /// Returns the stored super-admin address, or `None` if the
-    /// contract has not been initialized yet.
+    /// Returns the stored super-admin address.
     pub fn get_admin(env: Env) -> Option<Address> {
         env.storage().instance().get(&DataKey::Admin)
     }
 }
-
-

@@ -11,3 +11,4 @@ All notable changes to the MediChain dApp will be documented in this file.
 - feat: Integrate StellarWalletsKit in Next.js frontend
 - feat: Build Transaction Center and Activity Feed UI
 - style: Implement mobile responsive data tables and navigation
+- fix: Abstract blockchain logic into custom React hooks

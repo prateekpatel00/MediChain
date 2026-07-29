@@ -6,3 +6,4 @@ All notable changes to the MediChain dApp will be documented in this file.
 - chore: Initialize project structure and CI/CD workflow
 - feat: Implement Registry smart contract for RBAC
 - test: Add Registry contract success and failure tests
+- feat: Implement Core Logic contract with cross-contract calls

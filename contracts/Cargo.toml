@@ -1,26 +1,25 @@
-[package]
-name = "medichain-contract"
-version = "0.1.0"
-edition = "2021"
-description = "MediChain Soroban Smart Contract for Inter-Hospital Health Exchange"
-
-[lib]
-crate-type = ["cdylib", "rlib"]
-
-[dependencies]
-soroban-sdk = "21.0.0"
-
-[dev-dependencies]
-soroban-sdk = { version = "21.0.0", features = ["testutils"] }
+# ==============================================================
+# MediChain — Cargo Workspace
+# Manages two production-grade Soroban smart contracts:
+#   - medichain-registry : Hospital whitelist / authorization
+#   - medichain-core     : Medical records & access control
+#                          (calls registry via cross-contract)
+# ==============================================================
+[workspace]
+resolver = "2"
+members = [
+    "registry",
+    "core",
+]
 
 [profile.release]
-opt-level = "z"
+opt-level       = "z"
 overflow-checks = true
-debug = false
-strip = "symbols"
+debug           = false
+strip           = "symbols"
 debug-assertions = false
-panic = "abort"
+panic           = "abort"
 
 [profile.release-with-logs]
-inherits = "release"
+inherits         = "release"
 debug-assertions = true

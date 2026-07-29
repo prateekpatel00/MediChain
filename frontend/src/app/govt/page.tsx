@@ -1,45 +1,38 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+// ============================================================
+// MediChain Government Super Admin Portal (/govt)
+// ============================================================
+
+import React, { useState } from 'react';
 import Link from 'next/link';
 import {
   Landmark,
   Shield,
   Key,
   CheckCircle2,
-  XCircle,
   Building2,
-  Plus,
   Loader2,
-  ExternalLink,
   ArrowLeft,
-  Copy,
-  Check,
   Zap,
   Award,
+  ExternalLink,
+  Copy,
+  Check,
 } from 'lucide-react';
 
-import type { WalletState, StatusMessage } from '../../types/medichain';
-
-import {
-  connectFreighter,
-  checkFreighterInstalled,
-  invokeSorobanContract,
-  addressToScVal,
-  CONTRACT_ID,
-  STELLAR_TESTNET_RPC,
-} from '../../utils/stellar';
+import { useWallet } from '../../context/WalletContext';
+import { useStellar } from '../../hooks/useStellar';
+import { REGISTRY_CONTRACT_ID } from '../../services/stellar';
 
 export default function GovtDashboard() {
-  // ── Wallet State ─────────────────────────────────────────
-  const [wallet, setWallet] = useState<WalletState | null>(null);
-  const [freighterInstalled, setFreighterInstalled] = useState<boolean | null>(null);
-  const [isConnecting, setIsConnecting] = useState(false);
+  const { wallet, openWalletModal } = useWallet();
+  const { grantHospitalRights, isExecuting } = useStellar();
 
   // ── Form State ────────────────────────────────────────────
   const [hospitalAddress, setHospitalAddress] = useState('');
   const [hospitalName, setHospitalName] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
 
   // ── Authorized Hospitals List ──────────────────────────────
   const [authorizedHospitals, setAuthorizedHospitals] = useState<
@@ -59,79 +52,35 @@ export default function GovtDashboard() {
     },
   ]);
 
-  // ── Status Toast ──────────────────────────────────────────
-  const [status, setStatus] = useState<StatusMessage | null>({
-    type: 'info',
-    title: 'Government Authority Node Connected',
-    desc: `Contract: ${CONTRACT_ID.slice(0, 12)}... | Network: Stellar Testnet`,
-  });
-
-  useEffect(() => {
-    checkFreighterInstalled().then(setFreighterInstalled);
-  }, []);
-
-  // ── Wallet Connect ────────────────────────────────────────
-  const handleConnectWallet = async () => {
-    setIsConnecting(true);
-    try {
-      const info = await connectFreighter();
-      setWallet({ address: info.address, isConnected: true, network: info.network });
-      setStatus({
-        type: 'success',
-        title: 'Govt Admin Wallet Connected',
-        desc: `${info.address.slice(0, 8)}...${info.address.slice(-6)} on ${info.network}`,
-      });
-    } catch (err: any) {
-      setStatus({ type: 'error', title: 'Connection Failed', desc: err.message });
-    } finally {
-      setIsConnecting(false);
-    }
-  };
-
   // ── Action: Grant Hospital Rights ─────────────────────────
   const handleGrantRights = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!wallet) return;
+    if (!wallet.isConnected) {
+      openWalletModal();
+      return;
+    }
     if (!hospitalAddress) return;
 
-    setIsProcessing(true);
-    setStatus({
-      type: 'loading',
-      title: 'Executing grant_hospital_rights on Soroban…',
-      desc: 'Freighter will open — please approve transaction as Government Authority.',
-    });
+    const res = await grantHospitalRights(hospitalAddress.trim(), hospitalName.trim());
 
-    try {
-      const result = await invokeSorobanContract(
-        'grant_hospital_rights',
-        [addressToScVal(wallet.address), addressToScVal(hospitalAddress.trim())],
-        wallet.address
-      );
-
-      if (!result.success) throw new Error(result.error);
-
+    if (res.success && res.txHash) {
       const newHosp = {
         address: hospitalAddress.trim(),
-        name: hospitalName.trim() || 'Healthcare Institution',
+        name: hospitalName.trim() || 'Healthcare Institution Node',
         grantedAt: Date.now(),
-        txHash: result.txHash!,
+        txHash: res.txHash,
       };
 
       setAuthorizedHospitals((prev) => [newHosp, ...prev]);
       setHospitalAddress('');
       setHospitalName('');
-
-      setStatus({
-        type: 'success',
-        title: '✅ Hospital Granted On-Chain Publish Rights',
-        desc: `Wallet ${newHosp.address.slice(0, 10)}... can now publish patient record hashes to MediChain contract.`,
-        txHash: result.txHash,
-      });
-    } catch (err: any) {
-      setStatus({ type: 'error', title: 'Grant Rights Failed', desc: err.message });
-    } finally {
-      setIsProcessing(false);
     }
+  };
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedAddress(text);
+    setTimeout(() => setCopiedAddress(null), 2000);
   };
 
   return (
@@ -139,89 +88,30 @@ export default function GovtDashboard() {
       {/* Background glow */}
       <div className="fixed top-0 left-1/3 w-[600px] h-[600px] bg-amber-500/5 rounded-full blur-3xl pointer-events-none -z-10" />
 
-      {/* HEADER */}
-      <header className="sticky top-0 z-40 glass-panel border-b border-slate-800/80 px-6 py-3">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="p-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white transition-all">
-              <ArrowLeft className="w-4 h-4" />
-            </Link>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
-                <Landmark className="w-4 h-4" />
-              </div>
-              <div>
-                <h1 className="text-base font-bold text-white">Government Authority Portal</h1>
-                <p className="text-[10px] text-amber-400 font-medium">Ministry of Health &amp; Family Welfare · Tier 1 Super Admin</p>
-              </div>
-            </div>
+      {/* SUB-HEADER BANNER */}
+      <div className="bg-amber-950/40 border-b border-amber-500/20 px-4 sm:px-6 py-2.5">
+        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div className="flex items-center gap-2 text-amber-300">
+            <Landmark className="w-4 h-4 text-amber-400" />
+            <span className="font-bold">Government Authority Registry Portal</span>
+            <span className="text-amber-500/60">•</span>
+            <span className="font-mono text-[11px] opacity-90">Registry Contract: {REGISTRY_CONTRACT_ID.slice(0, 12)}...</span>
           </div>
 
-          <div className="flex items-center gap-3">
-            <Link
-              href="/hospital"
-              className="text-xs text-slate-400 hover:text-cyan-300 font-semibold px-3 py-1.5 rounded-lg border border-slate-800 hover:border-cyan-500/30 transition-all hidden sm:block"
-            >
-              Switch to Hospital Dashboard →
-            </Link>
-
-            <button
-              onClick={handleConnectWallet}
-              disabled={isConnecting}
-              className={`
-                flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-semibold
-                transition-all
-                ${wallet
-                  ? 'bg-amber-950/40 border-amber-500/40 text-amber-300'
-                  : 'bg-slate-900 border-amber-500/30 text-amber-300 hover:border-amber-400'}
-              `}
-            >
-              {isConnecting ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : wallet ? (
-                <CheckCircle2 className="w-4 h-4" />
-              ) : (
-                <Key className="w-4 h-4" />
-              )}
-              <span>{wallet ? 'Govt Admin Connected' : 'Connect Admin Wallet'}</span>
-            </button>
-          </div>
+          <Link
+            href="/hospital"
+            className="text-amber-400 hover:text-amber-200 font-semibold underline underline-offset-2 flex items-center gap-1"
+          >
+            Switch to Hospital Dashboard →
+          </Link>
         </div>
-      </header>
-
-      {/* STATUS BANNER */}
-      {status && (
-        <div className="max-w-7xl mx-auto px-6 mt-4 w-full">
-          <div className={`p-4 rounded-xl border flex items-start justify-between gap-3 backdrop-blur-md ${
-            status.type === 'success'
-              ? 'bg-emerald-950/50 border-emerald-500/40 text-emerald-200'
-              : status.type === 'error'
-              ? 'bg-rose-950/50 border-rose-500/40 text-rose-200'
-              : 'bg-amber-950/50 border-amber-500/40 text-amber-200'
-          }`}>
-            <div className="flex items-start gap-3">
-              {status.type === 'loading' ? (
-                <Loader2 className="w-5 h-5 text-amber-400 animate-spin mt-0.5" />
-              ) : status.type === 'success' ? (
-                <CheckCircle2 className="w-5 h-5 text-emerald-400 mt-0.5" />
-              ) : (
-                <Award className="w-5 h-5 text-amber-400 mt-0.5" />
-              )}
-              <div>
-                <p className="font-semibold text-sm">{status.title}</p>
-                <p className="text-xs opacity-90 mt-0.5">{status.desc}</p>
-              </div>
-            </div>
-            <button onClick={() => setStatus(null)} className="text-slate-400 hover:text-white text-xs">✕</button>
-          </div>
-        </div>
-      )}
+      </div>
 
       {/* MAIN CONTAINER */}
-      <main className="flex-1 max-w-7xl mx-auto px-6 py-8 w-full space-y-8">
-
+      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 py-8 w-full space-y-8">
+        
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-
+          
           {/* Form: Grant Hospital Rights */}
           <div className="lg:col-span-5 glass-panel p-6 rounded-2xl border border-slate-800 space-y-5">
             <div className="border-b border-slate-800 pb-4">
@@ -230,14 +120,14 @@ export default function GovtDashboard() {
                 <h2 className="text-lg font-bold text-white">Grant Hospital Publishing Rights</h2>
               </div>
               <p className="text-xs text-slate-400 mt-1">
-                Executes <code className="text-amber-300">grant_hospital_rights()</code> on Soroban. Only authorized hospitals can commit record hashes.
+                Executes <code className="text-amber-300">grant_hospital_rights()</code> on Registry Contract. Only authorized hospitals can commit record hashes.
               </p>
             </div>
 
             <form onSubmit={handleGrantRights} className="space-y-4">
               <div>
                 <label className="block text-[11px] font-semibold text-slate-300 mb-1 uppercase tracking-wider">
-                  Hospital Name / Identity
+                  Hospital Name / Institution Identity
                 </label>
                 <input
                   type="text"
@@ -262,24 +152,24 @@ export default function GovtDashboard() {
                 />
               </div>
 
-              <div className="p-3 bg-amber-950/30 border border-amber-500/20 rounded-xl flex items-start gap-2 text-[11px] text-amber-300">
+              <div className="p-3.5 bg-amber-950/30 border border-amber-500/20 rounded-xl flex items-start gap-2.5 text-xs text-amber-300">
                 <Zap className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
                 <span>
-                  Requires <strong>Government Super Admin signature</strong> via Freighter wallet extension.
+                  Requires <strong>Government Super Admin wallet signature</strong> via StellarWalletsKit.
                 </span>
               </div>
 
               <button
                 type="submit"
-                disabled={isProcessing || !wallet}
+                disabled={isExecuting}
                 className="w-full py-3 bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-500 hover:to-yellow-400 disabled:from-slate-700 disabled:to-slate-700 text-slate-950 font-bold rounded-xl shadow-lg shadow-amber-500/20 disabled:shadow-none transition-all flex items-center justify-center gap-2 text-sm"
               >
-                {isProcessing ? (
+                {isExecuting ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Signing via Freighter…</span>
+                    <span>Signing Transaction...</span>
                   </>
-                ) : !wallet ? (
+                ) : !wallet.isConnected ? (
                   <>
                     <Key className="w-4 h-4" />
                     <span>Connect Govt Admin Wallet First</span>
@@ -299,22 +189,34 @@ export default function GovtDashboard() {
             <div className="flex items-center justify-between">
               <h2 className="text-base font-bold text-white flex items-center gap-2">
                 <Building2 className="w-5 h-5 text-amber-400" />
-                Authorized Hospital Registry
+                Authorized Hospital Whitelist Registry
               </h2>
-              <span className="text-xs text-slate-400 font-mono">{authorizedHospitals.length} Nodes Authorized</span>
+              <span className="text-xs text-slate-400 font-mono">{authorizedHospitals.length} Nodes Whitelisted</span>
             </div>
 
             <div className="space-y-3">
               {authorizedHospitals.map((hosp, i) => (
                 <div key={i} className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-3">
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start justify-between flex-wrap gap-3">
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
                         <Building2 className="w-4 h-4" />
                       </div>
                       <div>
                         <p className="font-bold text-white text-sm">{hosp.name}</p>
-                        <p className="font-mono text-[11px] text-amber-400">{hosp.address.slice(0, 16)}...{hosp.address.slice(-6)}</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <p className="font-mono text-[11px] text-amber-400">{hosp.address.slice(0, 16)}...{hosp.address.slice(-6)}</p>
+                          <button
+                            onClick={() => handleCopy(hosp.address)}
+                            className="text-slate-500 hover:text-slate-300"
+                          >
+                            {copiedAddress === hosp.address ? (
+                              <Check className="w-3.5 h-3.5 text-emerald-400" />
+                            ) : (
+                              <Copy className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                        </div>
                       </div>
                     </div>
 
@@ -324,9 +226,17 @@ export default function GovtDashboard() {
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between text-[10px] text-slate-500 pt-2 border-t border-slate-800/60">
+                  <div className="flex items-center justify-between text-[10px] text-slate-500 pt-2 border-t border-slate-800/60 font-mono">
                     <span>Authorized on: {new Date(hosp.grantedAt).toLocaleDateString()}</span>
-                    <span className="font-mono text-cyan-400">Tx: {hosp.txHash.slice(0, 14)}...</span>
+                    <a
+                      href={`https://stellar.expert/explorer/testnet/tx/${hosp.txHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-cyan-400 hover:underline flex items-center gap-1"
+                    >
+                      <span>Tx: {hosp.txHash.slice(0, 14)}...</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
                   </div>
                 </div>
               ))}

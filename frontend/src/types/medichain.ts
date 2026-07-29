@@ -17,11 +17,51 @@ export interface DemoHospital {
   walletAddress?: string;
 }
 
-/** State of the connected Freighter wallet */
+/** Supported Stellar Wallets Kit wallet metadata */
+export interface SupportedWallet {
+  id: string;
+  name: string;
+  iconUrl?: string;
+  isAvailable: boolean;
+  type: 'extension' | 'web' | 'hardware';
+}
+
+/** State of the connected wallet */
 export interface WalletState {
-  address: string;
+  address: string | null;
   isConnected: boolean;
+  walletId: string | null;
+  walletName: string | null;
   network: string;
+}
+
+/** Transaction lifecycle status */
+export type TransactionStatus = 'Pending' | 'Processing' | 'Confirmed' | 'Failed';
+
+/** Which Soroban contract was involved */
+export type ContractType = 'Registry Contract' | 'Core Contract';
+
+/** Recorded on-chain transaction item for the Transaction Center */
+export interface TransactionItem {
+  id: string;
+  hash: string;
+  method:
+    | 'initialize'
+    | 'grant_hospital_rights'
+    | 'remove_hospital'
+    | 'upload_record'
+    | 'request_access'
+    | 'approve_access'
+    | 'reject_access'
+    | 'view_record';
+  contractType: ContractType;
+  contractId: string;
+  status: TransactionStatus;
+  timestamp: number;
+  details: string;
+  caller: string;
+  error?: string;
+  explorerUrl: string;
 }
 
 /** On-chain patient record metadata (mirrors contract RecordMeta) */

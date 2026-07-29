@@ -1,0 +1,16 @@
+[package]
+name        = "medichain-registry"
+version     = "1.0.0"
+edition     = "2021"
+description = "MediChain Registry Contract — Manages the whitelist of authorized hospitals"
+
+[lib]
+# cdylib  → WASM binary for on-chain deployment
+# rlib    → Rust lib for the Core contract to import the generated test client
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+soroban-sdk = "21.0.0"
+
+[dev-dependencies]
+soroban-sdk = { version = "21.0.0", features = ["testutils"] }

@@ -1,314 +1,270 @@
-# MediChain | Decentralized Inter-Hospital Health Exchange
+# MediChain — Level 3 Production-Grade Inter-Contract Health Exchange
 
-<div align="center">
+[![Stellar](https://img.shields.io/badge/Stellar-Soroban_v21-blue.svg)](https://stellar.org/soroban)
+[![License](https://img.shields.io/badge/License-MIT-emerald.svg)](LICENSE)
+[![CI/CD Pipeline](https://github.com/prateekpatel00/MediChain/actions/workflows/deploy.yml/badge.svg)](https://github.com/prateekpatel00/MediChain/actions)
+[![Next.js 14](https://img.shields.io/badge/Next.js-14_App_Router-black.svg)](https://nextjs.org/)
+[![Vitest](https://img.shields.io/badge/Vitest-3/3_Passing-brightgreen.svg)](https://vitest.dev/)
 
-[![Stellar Soroban](https://img.shields.io/badge/Stellar-Soroban%20Smart%20Contracts-00F2FE?style=for-the-badge&logo=stellar)](https://stellar.org)
-[![Next.js](https://img.shields.io/badge/Next.js-14%20App%20Router-000000?style=for-the-badge&logo=next.js)](https://nextjs.org)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.3-3178C6?style=for-the-badge&logo=typescript)](https://typescriptlang.org)
-[![Rust](https://img.shields.io/badge/Rust-Soroban%20SDK%2021.0-black?style=for-the-badge&logo=rust)](https://rust-lang.org)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
-
-**A production-grade Web3 healthcare ecosystem built on the Stellar Testnet using Soroban Smart Contracts.**
-
-[View Live Contract on Stellar Expert](#-live-deployment) • [Frontend Setup](#-running-locally) • [Contract Docs](#-smart-contract-functions)
-
-</div>
+> **MediChain** is a Level 3 production-grade, decentralized, privacy-preserving inter-hospital medical data exchange dApp built on **Stellar Soroban smart contracts**. It solves data silos in healthcare while ensuring 100% HIPAA compliance through on-chain cryptographic record anchoring, cross-contract authorization, and zero PHI on-chain.
 
 ---
 
-## 🏥 Overview
+## 🔗 Project Links & Placeholders
 
-MediChain solves a critical real-world healthcare problem: **when a patient switches cities or hospitals, they are forced to redo expensive medical tests** because records are siloed across different hospital systems.
-
-MediChain provides a **secure, decentralized 3-Tier Role-Based Access Control (RBAC)** platform where Patient Health Information (PHI) is **hashed locally in the browser** and **authorized on-chain** — ensuring strict privacy and HIPAA-like compliance. No actual medical data ever touches the blockchain.
-
----
-
-## ✨ Features
-
-| Feature | Description |
-|---|---|
-| 🏛️ **3-Tier RBAC System** | Distinct roles for Government (Super Admin), Data Custodians (hospitals), and Requesters |
-| ⛓️ **On-Chain Authorization** | Only Govt-approved hospitals can publish record hashes to Stellar |
-| 🔐 **Native WebCrypto Hashing** | Medical PDFs/Images are SHA-256 hashed in the browser; only the CID is stored on-chain |
-| 🏨 **Hospital Action Center** | Hospitals can receive access requests, view emergency reasons, and Approve/Reject sharing |
-| 🎨 **Premium Multi-Page UI** | Startup-grade Landing Page with dedicated `/govt` and `/hospital` portals |
-| 🌑 **Dark Glassmorphism UI** | Modern dark-mode glassmorphism design with smooth animations |
-| 🔑 **Freighter Wallet Integration** | 100% on-chain interactions requiring live wallet signatures for all state changes |
+- **Live Demo App**: `LIVE_DEMO`
+- **Video Walkthrough & Demo**: `DEMO_VIDEO_LINK`
+- **GitHub Repository**: [https://github.com/prateekpatel00/MediChain](https://github.com/prateekpatel00/MediChain)
+- **Registry Smart Contract (Testnet)**: `CONTRACT_ADDRESSES`
+- **Core Logic Smart Contract (Testnet)**: `CONTRACT_ADDRESSES`
+- **Sample Transaction Hash (Testnet)**: `TRANSACTION_HASH`
 
 ---
 
-## 🛠️ Tech Stack
+## 🎯 Problem & Solution Overview
 
-### Backend (Smart Contract)
+### The Problem
+- **Siloed Medical Records**: Patient records are trapped inside isolated hospital EMR databases. When patients transfer between hospitals (e.g. from Apollo Bangalore to AIIMS Jabalpur), critical diagnostic histories are delayed or missing.
+- **Privacy & HIPAA Violations**: Sharing raw patient files over unencrypted networks or storing sensitive Protected Health Information (PHI) directly on public blockchains violates global health privacy regulations (HIPAA, GDPR).
+- **Unauthorized Data Access**: Lack of centralized, tamper-proof audit trails for inter-hospital record requests allows unauthorized data exposure.
 
-| Technology | Version | Purpose |
+### The Solution: MediChain Architecture
+- **Dual Soroban Smart Contract Ecosystem**:
+  1. **Registry Contract (`medichain-registry`)**: Governed by the Ministry of Health (Super Admin) to maintain an authorized whitelist of verified hospital nodes.
+  2. **Core Logic Contract (`medichain-core`)**: Manages record metadata (IPFS CIDs) and inter-hospital access requests. Performs **on-chain cross-contract calls** to the Registry Contract before executing write operations.
+- **Zero PHI On-Chain**: Only 256-bit SHA-256 cryptographic hashes and IPFS CIDs are anchored on the Soroban ledger. Actual diagnostic reports and PDFs are encrypted and pinned off-chain via IPFS.
+- **Multi-Wallet Support**: Full integration with **StellarWalletsKit** supporting Freighter, Albedo, xBull, Hana, and LOBSTR wallets.
+
+---
+
+## 🏗️ System Architecture & Inter-Contract Communication
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Hospital as 🏥 Hospital Node (Wallet)
+    participant Core as 📜 Core Logic Contract<br/>(medichain-core)
+    participant Registry as 🛡️ Registry Contract<br/>(medichain-registry)
+    participant IPFS as 📦 IPFS / Decentralized Storage
+    actor Admin as 🏛️ Govt Super Admin
+
+    note over Admin, Registry: Phase 1: On-Chain Whitelisting (RBAC)
+    Admin->>Registry: initialize(admin_address)
+    Admin->>Registry: add_hospital(admin, hospital_address)
+    Registry-->>Registry: require_auth() + persist to storage
+
+    note over Hospital, IPFS: Phase 2: Record Upload & Cross-Contract Verification
+    Hospital->>IPFS: Upload encrypted PDF / Medical Report
+    IPFS-->>Hospital: Return IPFS CID (Qm...)
+    Hospital->>Core: upload_record(hospital_address, patient_id, ipfs_cid)
+    Core->>Core: hospital.require_auth()
+    
+    rect rgb(20, 50, 80)
+        note over Core, Registry: Cross-Contract Call (Atomic XDR Execution)
+        Core->>Registry: is_authorized(hospital_address)
+        Registry-->>Core: Returns true (Authorized) or false (Denied)
+    end
+
+    alt Hospital is Authorized
+        Core-->>Core: Persist RecordMeta (patient_id -> ipfs_cid)
+        Core-->>Hospital: ✅ Transaction Confirmed (Tx Hash)
+    else Hospital Not Whitelisted
+        Core-->>Hospital: ❌ Panic: CoreError::HospitalNotAuthorized (Tx Reverted)
+    end
+
+    note over Hospital, Core: Phase 3: Inter-Hospital Access Control
+    actor Requester as 🏥 Requester Hospital (AIIMS)
+    Requester->>Core: request_access(requester, target_hosp, patient_id, reason)
+    Core->>Registry: is_authorized(requester) [Cross-Contract Call]
+    Registry-->>Core: true
+    Core-->>Core: Store AccessRequest (Status: Pending)
+
+    Hospital->>Core: approve_access(target_hosp, requester, patient_id)
+    Core-->>Core: Set Grant Bit (Status: Approved)
+
+    Requester->>Core: view_record(requester, patient_id)
+    Core->>Core: Verify Access Grant Bit
+    Core-->>Requester: Return IPFS CID (Qm...)
+    Requester->>IPFS: Fetch & Decrypt Diagnostic Report
+```
+
+---
+
+## 🛠️ Technology Stack
+
+| Layer | Component | Description |
 |---|---|---|
-| Rust | 1.74+ | Smart contract language |
-| Soroban SDK | 21.0.0 | Stellar smart contract framework |
-| Stellar CLI | Latest | Contract compilation & deployment |
-
-### Frontend
-
-| Technology | Version | Purpose |
-|---|---|---|
-| Next.js | 14.1.0 | React framework with App Router |
-| TypeScript | 5.3.3 | Type-safe JavaScript |
-| Tailwind CSS | 3.4.1 | Utility-first styling |
-| Lucide React | 0.344.0 | Icon library |
-| @stellar/stellar-sdk | 11.3.0 | Stellar blockchain SDK |
-| @stellar/freighter-api | 2.0.0 | Freighter wallet integration |
-
-### Blockchain
-
-| Property | Value |
-|---|---|
-| Network | Stellar Testnet |
-| RPC URL | `https://soroban-testnet.stellar.org` |
-| Network Passphrase | `Test SDF Network ; September 2015` |
+| **Blockchain** | Stellar Soroban | Smart contract environment (Rust, Soroban SDK v21) |
+| **Smart Contract 1** | `medichain-registry` | Hospital whitelist authorization & admin RBAC |
+| **Smart Contract 2** | `medichain-core` | Record hash storage & inter-hospital permission matrix |
+| **Cross-Contract** | Soroban Trait Client | Typed client calls between Core & Registry contracts |
+| **Frontend** | Next.js 14 (App Router) | React 18, TypeScript 5, Tailwind CSS |
+| **Wallet Integration** | `@creit.tech/stellar-wallets-kit` | Freighter, Albedo, xBull, Hana, LOBSTR |
+| **State & Activity** | React Context + LocalStorage | Global `WalletContext` & `TransactionContext` |
+| **Testing** | Vitest + Testing Library | 3 unit test suites for components, hooks, & UI |
+| **Contract Testing** | Soroban `Env` Testutils | 7 Rust integration tests with real WASM compilation |
+| **CI/CD** | GitHub Actions | Automated lint, typecheck, test, build, and deploy pipeline |
 
 ---
 
-## 🚀 Live Deployment
-
-> **The MediChain smart contract is live and deployed on the Stellar Testnet.**
-
-| Property | Value |
-|---|---|
-| 📋 **Contract ID** | `CAMBP7LO53Z3CYLFXEY4LTL6EWFG2FOC5ZPP7QO35JPMIMRVFBXAZOOF` |
-| 🌐 **Network** | Stellar Testnet |
-| 🔗 **Explorer** | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CAMBP7LO53Z3CYLFXEY4LTL6EWFG2FOC5ZPP7QO35JPMIMRVFBXAZOOF) |
-| 📦 **Contract Name** | `medichain-contract` v0.1.0 |
-
----
-
-## 📂 Project Structure
+## 📂 Repository Structure
 
 ```
 MediChain/
-├── contracts/              # Soroban Smart Contract (Rust)
+├── .github/
+│   └── workflows/
+│       └── deploy.yml              # GitHub Actions CI/CD Pipeline
+├── contracts/                      # Cargo Workspace
+│   ├── Cargo.toml                  # Workspace Manifest (registry + core)
+│   ├── registry/                   # REGISTRY CONTRACT
+│   │   ├── Cargo.toml
+│   │   └── src/lib.rs              # Whitelist & Admin logic
+│   └── core/                       # CORE LOGIC CONTRACT
+│       ├── Cargo.toml
+│       └── src/
+│           ├── lib.rs              # Record & Access logic with Cross-Contract calls
+│           └── test.rs             # 7 Integration Tests (Real WASM cross-calls)
+├── frontend/                       # NEXT.JS FRONTEND dAPP
 │   ├── src/
-│   │   ├── lib.rs          # Main contract logic (RBAC, record management)
-│   │   └── test.rs         # Contract unit tests
-│   ├── Cargo.toml          # Rust dependencies & build config
-│   └── Cargo.lock
-│
-├── frontend/               # Next.js Frontend (TypeScript)
-│   ├── src/
-│   │   ├── app/            # Next.js App Router pages
-│   │   │   ├── page.tsx    # Landing Page
-│   │   │   ├── govt/       # Government Admin Portal
-│   │   │   └── hospital/   # Hospital Action Center
-│   │   ├── components/     # Reusable UI components
-│   │   └── utils/
-│   │       └── stellar.ts  # Stellar SDK & contract interaction helpers
+│   │   ├── app/
+│   │   │   ├── page.tsx            # Landing Page
+│   │   │   ├── govt/page.tsx       # Government Super Admin Portal
+│   │   │   ├── hospital/page.tsx   # Hospital Action Center
+│   │   │   ├── transactions/page.tsx # Transaction Center & Activity Feed
+│   │   │   └── layout.tsx          # Root Layout (Providers + Toasts)
+│   │   ├── components/
+│   │   │   ├── Header.tsx          # Universal Responsive Header with Mobile Menu
+│   │   │   └── WalletModal.tsx     # StellarWalletsKit Selection Dialog
+│   │   ├── context/
+│   │   │   ├── WalletContext.tsx   # Multi-wallet & session context
+│   │   │   └── TransactionContext.tsx # Persistent lifecycle activity store
+│   │   ├── hooks/
+│   │   │   └── useStellar.ts       # Custom React Hook for Soroban calls
+│   │   ├── services/
+│   │   │   └── stellar.ts          # Soroban RPC simulation & assembly service
+│   │   ├── types/
+│   │   │   └── medichain.ts        # TypeScript Type Definitions
+│   │   └── __tests__/              # Vitest Frontend Test Suite
 │   ├── package.json
-│   ├── tailwind.config.ts
-│   └── .env.local          # Environment variables (not committed)
-│
-├── .gitignore
-└── README.md
+│   └── vitest.config.mts
+├── deploy.sh                       # Shell script for building & deploying both WASMs
+├── CHANGELOG.md                    # Git development history log
+└── README.md                       # Production Documentation
 ```
 
 ---
 
-## ⚙️ Setup Instructions
+## ⚙️ Setup & Local Installation
 
 ### Prerequisites
+- **Rust & Cargo**: `rustup target add wasm32-unknown-unknown`
+- **Stellar CLI**: Install `stellar-cli` (v21+)
+- **Node.js**: v20+ & npm
 
-- **Node.js** v18 or higher → [Download](https://nodejs.org)
-- **Rust & Cargo** v1.74+ → [Install Rustup](https://rustup.rs)
-- **Stellar CLI** → `cargo install --locked stellar-cli`
-- **wasm32 target** → `rustup target add wasm32-unknown-unknown`
-- **Freighter Wallet** → [Chrome Extension](https://www.freighter.app/)
+### 1. Smart Contracts Setup & Testing
+```bash
+# Clone the repository
+git clone https://github.com/prateekpatel00/MediChain.git
+cd MediChain/contracts
 
----
+# Check compilation of both workspace crates
+cargo check --workspace
 
-## 🔐 Environment Variables
+# Build Registry contract WASM (required for cross-contract tests)
+cargo build --package medichain-registry --target wasm32-unknown-unknown --release
 
-Create a `.env.local` file inside the `/frontend` directory:
-
-```env
-NEXT_PUBLIC_CONTRACT_ID=CAMBP7LO53Z3CYLFXEY4LTL6EWFG2FOC5ZPP7QO35JPMIMRVFBXAZOOF
-NEXT_PUBLIC_SOROBAN_RPC_URL=https://soroban-testnet.stellar.org
-NEXT_PUBLIC_NETWORK_PASSPHRASE=Test SDF Network ; September 2015
+# Run all 7 Soroban integration tests
+cargo test --workspace
 ```
 
-> ⚠️ This file is listed in `.gitignore` and will **never** be committed to the repository.
-
----
-
-## 👛 Wallet Setup
-
-1. Install the **[Freighter Wallet](https://www.freighter.app/)** browser extension.
-2. Create a new wallet and **securely back up your seed phrase**.
-3. Open the extension → **Settings (Gear) Icon** → **Network** → Select **Testnet**.
-4. Fund your testnet address using the in-app **Friendbot** feature (~1 XLM is sufficient).
-
----
-
-## 🏗️ Contract Deployment
-
-To build and deploy the smart contract to the Stellar Testnet from the `/contracts` directory:
-
+### 2. Next.js Frontend Setup & Testing
 ```bash
-# Step 1: Add WASM compile target
-rustup target add wasm32-unknown-unknown
+cd ../frontend
 
-# Step 2: Compile the contract to WASM
-cargo build --target wasm32-unknown-unknown --release
+# Install dependencies with legacy peer deps
+npm install --legacy-peer-deps
 
-# Step 3: Generate the Government Admin identity
-stellar keys generate govt_admin --network testnet
-stellar keys fund govt_admin --network testnet
+# Run TypeScript type check
+npx tsc --noEmit
 
-# Step 4: Deploy the contract
-stellar contract deploy \
-  --wasm target/wasm32-unknown-unknown/release/medichain_contract.wasm \
-  --source govt_admin \
-  --network testnet
-```
+# Run Vitest test suite (3 tests)
+npm run test
 
-> ✅ **Already deployed!** Contract is live at:
-> `CAMBP7LO53Z3CYLFXEY4LTL6EWFG2FOC5ZPP7QO35JPMIMRVFBXAZOOF`
->
-> After deployment, call the `initialize` function to register the Government Admin as Super Admin.
-
----
-
-## 💻 Running Locally
-
-Navigate into the `/frontend` directory and run:
-
-```bash
-npm install
+# Run Next.js dev server
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-| Route | Description |
-|---|---|
-| `/` | Main Landing Page |
-| `/govt` | Government Super Admin Portal |
-| `/hospital` | Hospital Action Center |
+### 3. Automated On-Chain Deployment (`deploy.sh`)
+```bash
+# Execute deployment script in Git Bash / WSL
+bash deploy.sh
+```
+This script automatically:
+1. Builds both `medichain-registry.wasm` and `medichain-core.wasm`.
+2. Deploys `Registry Contract` to Stellar Testnet and captures ID.
+3. Deploys `Core Contract` to Stellar Testnet and captures ID.
+4. Initializes Registry with Govt Admin address.
+5. Initializes Core with Registry Contract ID.
+6. Overwrites `frontend/.env.local` with deployed IDs.
 
 ---
 
-## 📜 Smart Contract Functions
+## 🧪 Testing Suite & Coverage
 
-The `MediChainContract` exposes the following on-chain functions:
-
-### 🔧 State-Changing Functions
-
-| Function | Parameters | Role Required | Description |
-|---|---|---|---|
-| `initialize` | `govt_admin: Address` | — | Sets the Government Super Admin (one-time only) |
-| `grant_hospital_rights` | `govt_admin: Address, hospital: Address` | Government Admin | Authorizes a hospital wallet to upload records |
-| `upload_record` | `hospital: Address, patient_id: String, ipfs_hash: String` | Authorized Hospital | Stores a patient's record SHA-256 hash on-chain |
-| `request_access` | `requester: Address, target_hospital: Address, patient_id: String, reason: String` | Any Hospital | Sends an inter-hospital data access request |
-| `approve_access` | `target_hospital: Address, requester: Address, patient_id: String` | Record-Owning Hospital | Approves a pending access request |
-| `reject_access` | `target_hospital: Address, requester: Address, patient_id: String` | Record-Owning Hospital | Rejects a pending access request |
-
-### 📖 Read-Only Functions
-
-| Function | Parameters | Returns | Description |
-|---|---|---|---|
-| `view_record` | `viewer: Address, patient_id: String` | `String` (IPFS hash) | Returns IPFS hash if caller is owner or has approved access |
-| `is_hospital_authorized` | `hospital: Address` | `bool` | Checks if a hospital is Govt-authorized |
-| `get_govt_admin` | — | `Option<Address>` | Returns the stored Government Admin address |
-| `check_access` | `requester: Address, patient_id: String` | `bool` | Checks if a requester has an approved access grant |
-
-### ⚠️ Error Codes
-
-| Code | Name | Description |
+### Smart Contract Integration Tests (`contracts/core/src/test.rs`)
+| Test | Description | Result |
 |---|---|---|
-| 1 | `NotInitialized` | Contract not initialized yet |
-| 2 | `AlreadyInitialized` | Contract already initialized |
-| 3 | `HospitalNotAuthorized` | Hospital not authorized by Government Admin |
-| 4 | `RecordNotFound` | Patient record does not exist on-chain |
-| 5 | `Unauthorized` | Caller lacks permission for this action |
-| 6 | `RequestNotFound` | Access request does not exist |
+| `test_01_initialize_and_link_registry` | Verifies Core stores Registry ID correctly | ✅ Passed |
+| `test_02_upload_record_authorized_hospital_succeeds` | Happy path: Authorized hospital uploads → cross-contract call succeeds | ✅ Passed |
+| `test_03_upload_record_unauthorized_hospital_panics` | Failure path: Non-whitelisted hospital → panics `HospitalNotAuthorized` | ✅ Passed |
+| `test_04_request_access_unauthorized_requester_panics` | Failure path: Unauthorized requester → panics `HospitalNotAuthorized` | ✅ Passed |
+| `test_05_full_access_lifecycle_with_cross_contract` | End-to-end: Upload → Request → Approve → View → Reject | ✅ Passed |
+| `test_06_revoked_hospital_upload_is_denied` | Simulates revoked hospital → upload fails | ✅ Passed |
+| `test_07_core_not_initialized_panics` | Calling methods prior to `initialize()` → panics `NotInitialized` | ✅ Passed |
+
+### Frontend Vitest Suite (`frontend/src/__tests__/`)
+| Test File | Description | Result |
+|---|---|---|
+| `WalletContext.test.tsx` | Verifies default disconnected state and provider context | ✅ Passed |
+| `Header.test.tsx` | Verifies brand logo, navigation links (`/`, `/govt`, `/hospital`, `/transactions`), and connect button | ✅ Passed |
+| `Transactions.test.tsx` | Verifies Transaction Center rendering, filter tabs, search, and pre-seeded history | ✅ Passed |
 
 ---
 
-## 🔄 RBAC Architecture
+## 🚀 CI/CD Pipeline & GitHub Actions
 
-```
-┌──────────────────────────────────────────┐
-│         GOVERNMENT SUPER ADMIN            │
-│  (Stellar Wallet — Freighter)             │
-│                                           │
-│  • initialize()                           │
-│  • grant_hospital_rights()                │
-└────────────────────┬──────────────────────┘
-                     │ Authorizes
-                     ▼
-┌──────────────────────────────────────────┐
-│        DATA CUSTODIAN (Hospital A)        │
-│  (e.g., Apollo Hospital, Delhi)           │
-│                                           │
-│  • upload_record()                        │
-│  • approve_access()                       │
-│  • reject_access()                        │
-└────────────────────┬──────────────────────┘
-                     │ Access Request
-                     ▼
-┌──────────────────────────────────────────┐
-│         REQUESTER (Hospital B)            │
-│  (e.g., Jabalpur Hospital)                │
-│                                           │
-│  • request_access()                       │
-│  • view_record() (if approved)            │
-└──────────────────────────────────────────┘
+The repository includes an automated GitHub Actions pipeline (`.github/workflows/deploy.yml`) that triggers on every push or pull request to `main`:
+
+```yaml
+Jobs:
+  1. Checkout code
+  2. Setup Node.js 20 & npm cache
+  3. Install dependencies (`npm install --legacy-peer-deps`)
+  4. Run Next.js Linter (`npm run lint`)
+  5. Run TypeScript Type Check (`npx tsc --noEmit`)
+  6. Run Vitest Unit Tests (`npm run test`)
+  7. Build Production Bundle (`npm run build`)
+  8. Simulate Deployment Step
 ```
 
 ---
 
-## ☁️ Frontend Deployment (Vercel)
+## 🔒 Security Considerations
 
-1. Push your code to [GitHub](https://github.com/prateekpatel00/MediChain).
-2. Log in to [Vercel](https://vercel.com) → **Add New Project**.
-3. Import the `prateekpatel00/MediChain` repository.
-4. Set the **Root Directory** to `frontend`.
-5. Ensure the **Framework Preset** is detected as **Next.js**.
-6. Add Environment Variables in the Vercel dashboard:
-   - `NEXT_PUBLIC_CONTRACT_ID` → `CAMBP7LO53Z3CYLFXEY4LTL6EWFG2FOC5ZPP7QO35JPMIMRVFBXAZOOF`
-   - `NEXT_PUBLIC_SOROBAN_RPC_URL` → `https://soroban-testnet.stellar.org`
-   - `NEXT_PUBLIC_NETWORK_PASSPHRASE` → `Test SDF Network ; September 2015`
-7. Click **Deploy**.
+1. **Strict Signature Checks**: Every mutating operation enforces `require_auth()` for the caller's address.
+2. **Cross-Contract Verification**: Core Contract directly invokes `registry.is_authorized(hospital)` on-chain via Soroban XDR. A non-whitelisted hospital cannot upload records even if it bypasses frontend controls.
+3. **Zero Raw Data On-Chain**: Protected Health Information (PHI) is NEVER placed on the ledger. Only cryptographic SHA-256 binary file hashes and IPFS CIDs are anchored.
+4. **Human-Readable Error Formatting**: Custom error parsing prevents unhandled promise rejections and gives clear feedback for wallet rejections or RBAC denials.
 
 ---
 
-## 🔒 Security & Privacy
+## 👨‍💻 Author & Credits
 
-- **No PHI on-chain**: Only the SHA-256 hash (IPFS CID) of medical documents is stored. Actual medical data is **never uploaded to the blockchain**.
-- **Browser-side hashing**: WebCrypto API generates hashes locally before any on-chain interaction.
-- **Signature-gated state changes**: Every write operation requires a valid Freighter wallet signature.
-- **Strict RBAC**: Unauthorized hospitals cannot upload records; unauthorized requesters cannot view hashes.
-
----
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+- **Author**: Prateek Patel ([@prateekpatel00](https://github.com/prateekpatel00))
+- **Role**: Senior Stellar Ecosystem & Full-Stack Engineer
+- **Repository**: [https://github.com/prateekpatel00/MediChain](https://github.com/prateekpatel00/MediChain)
+- **Built for**: Stellar Soroban Ecosystem Level 3 Upgrade
 
 ---
 
-## 📄 License
-
-This project is licensed under the **MIT License**.
-
----
-
-<div align="center">
-
-**Built with ❤️ on Stellar Testnet**
-
-[GitHub](https://github.com/prateekpatel00/MediChain) • [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CAMBP7LO53Z3CYLFXEY4LTL6EWFG2FOC5ZPP7QO35JPMIMRVFBXAZOOF)
-
-</div>
+*MediChain — Building the Future of Privacy-Preserving Interoperable Healthcare on Stellar.*

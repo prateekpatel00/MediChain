@@ -1,0 +1,19 @@
+[package]
+name        = "medichain-core"
+version     = "1.0.0"
+edition     = "2021"
+description = "MediChain Core Contract — Medical records & access control with cross-contract registry checks"
+
+[lib]
+# cdylib → WASM binary for on-chain deployment
+# rlib   → Rust lib for test imports
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+soroban-sdk = "21.0.0"
+
+[dev-dependencies]
+soroban-sdk       = { version = "21.0.0", features = ["testutils"] }
+# Import the registry crate so Soroban can generate a typed test client
+# for the RegistryContract. This allows real cross-contract calls in tests.
+medichain-registry = { path = "../registry" }

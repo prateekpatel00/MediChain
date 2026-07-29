@@ -1,10 +1,7 @@
 'use client';
 
 // ============================================================
-// MediChain Government Super Admin Portal (/govt)
-// ============================================================
-// Step-by-step intuitive workflow for Government Authorities to whitelist
-// hospital nodes on the Soroban Registry Contract.
+// MediChain Government Super Admin Portal (/govt) — Light Theme 3D
 // ============================================================
 
 import React, { useState } from 'react';
@@ -16,13 +13,11 @@ import {
   CheckCircle2,
   Building2,
   Loader2,
-  Zap,
   Award,
   ExternalLink,
   Copy,
   Check,
   ShieldAlert,
-  ArrowRight,
   UserCheck,
 } from 'lucide-react';
 
@@ -36,17 +31,16 @@ export default function GovtDashboard() {
   const { wallet, openWalletModal } = useWallet();
   const { grantHospitalRights, isExecuting } = useStellar();
 
-  // ── Form State ────────────────────────────────────────────
+  // Form State
   const [hospitalAddress, setHospitalAddress] = useState('');
   const [hospitalName, setHospitalName] = useState('');
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
 
-  // ── Whitelisted Hospitals ─────────────────────────────────
+  // Whitelisted Hospitals State
   const [authorizedHospitals, setAuthorizedHospitals] = useState<
     Array<{ address: string; name: string; grantedAt: number; txHash: string }>
   >([]);
 
-  // Action: Grant Rights
   const handleGrantRights = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!wallet.isConnected) {
@@ -80,18 +74,18 @@ export default function GovtDashboard() {
   // Role Guarding: Require Govt Admin authentication
   if (user.role !== 'govt') {
     return (
-      <div className="min-h-[80vh] flex flex-col items-center justify-center p-6 text-center bg-[#070D1F]">
-        <div className="max-w-md space-y-4 glass-panel bg-[#0B132B] p-8 rounded-3xl border border-slate-800 shadow-2xl">
-          <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 mx-auto">
+      <div className="min-h-[80vh] flex flex-col items-center justify-center p-6 text-center bg-[#F8FAFC]">
+        <div className="max-w-md space-y-4 bg-white p-8 rounded-3xl border border-slate-200 shadow-2xl shadow-slate-200/80">
+          <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 mx-auto">
             <ShieldAlert className="w-6 h-6" />
           </div>
-          <h2 className="text-xl font-bold text-white">Government Admin Access Required</h2>
-          <p className="text-xs text-slate-400">
+          <h2 className="text-xl font-extrabold text-slate-900">Government Admin Access Required</h2>
+          <p className="text-xs text-slate-600 font-medium">
             You must be logged in as a Government Super Admin to manage the hospital whitelist registry.
           </p>
           <Link
             href="/login"
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-cyan-600 to-teal-500 hover:from-cyan-500 hover:to-teal-400 text-slate-950 font-bold rounded-xl text-xs shadow-lg transition-all w-full"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs shadow-lg shadow-slate-900/10 transition-all w-full"
           >
             <UserCheck className="w-4 h-4" />
             <span>Go to Portal Login</span>
@@ -102,23 +96,21 @@ export default function GovtDashboard() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#070D1F] text-slate-100 font-sans">
-      {/* Background glow */}
-      <div className="fixed top-0 left-1/3 w-[600px] h-[600px] bg-cyan-500/5 rounded-full blur-3xl pointer-events-none -z-10" />
-
+    <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-slate-900 font-sans">
+      
       {/* SUB-HEADER */}
-      <div className="bg-[#0B132B] border-b border-slate-800 px-4 sm:px-6 py-3">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2 text-xs">
-          <div className="flex items-center gap-2 text-cyan-300">
-            <Landmark className="w-4 h-4 text-cyan-400" />
-            <span className="font-bold text-white">Ministry of Health Authority Portal</span>
-            <span className="text-slate-600">•</span>
-            <span className="font-mono text-[11px] text-slate-400">Registry Contract: {REGISTRY_CONTRACT_ID.slice(0, 12)}...</span>
+      <div className="bg-white border-b border-slate-200/80 shadow-sm px-4 sm:px-6 py-3.5">
+        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2 text-slate-800 font-bold">
+            <Landmark className="w-4 h-4 text-teal-600" />
+            <span>Ministry of Health Authority Portal</span>
+            <span className="text-slate-300">•</span>
+            <span className="font-mono text-[11px] text-slate-500 font-normal">Registry Contract: {REGISTRY_CONTRACT_ID.slice(0, 14)}...</span>
           </div>
 
-          <div className="flex items-center gap-2 text-xs text-emerald-400 font-medium">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-            <span>Authenticated Super Admin: {user.username}</span>
+          <div className="flex items-center gap-2 text-xs text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 font-bold">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Super Admin: {user.username}</span>
           </div>
         </div>
       </div>
@@ -130,15 +122,15 @@ export default function GovtDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           
           {/* Form: Grant Hospital Rights */}
-          <div className="lg:col-span-6 glass-panel bg-[#0B132B] p-6 sm:p-8 rounded-3xl border border-slate-800 space-y-6">
-            <div className="border-b border-slate-800 pb-4">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+          <div className="lg:col-span-6 bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/60 space-y-6">
+            <div className="border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-600">
                   <Award className="w-5 h-5" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-white">Hospital Node Whitelisting Workflow</h2>
-                  <p className="text-xs text-slate-400">Authorizes hospital public key to publish record hashes on Soroban</p>
+                  <h2 className="text-lg font-extrabold text-slate-900">Hospital Node Whitelisting</h2>
+                  <p className="text-xs text-slate-500 font-medium">Authorizes hospital public key on Soroban Registry Contract</p>
                 </div>
               </div>
             </div>
@@ -146,25 +138,25 @@ export default function GovtDashboard() {
             <form onSubmit={handleGrantRights} className="space-y-6">
               
               {/* STEP 1 */}
-              <div className={`p-4 rounded-2xl border transition-all ${wallet.isConnected ? 'bg-emerald-950/20 border-emerald-500/30' : 'bg-[#0F172A] border-slate-800'}`}>
+              <div className={`p-4 rounded-2xl border transition-all ${wallet.isConnected ? 'bg-emerald-50/80 border-emerald-200' : 'bg-slate-50 border-slate-200'}`}>
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <span className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center ${wallet.isConnected ? 'bg-emerald-400 text-slate-950' : 'bg-slate-800 text-cyan-400'}`}>
+                  <div className="flex items-center gap-3">
+                    <span className={`w-7 h-7 rounded-full text-xs font-extrabold flex items-center justify-center ${wallet.isConnected ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-700'}`}>
                       1
                     </span>
-                    <span className="text-xs font-bold text-white">Step 1: Connect Authority Key</span>
+                    <span className="text-xs font-extrabold text-slate-900">Step 1: Connect Authority Wallet</span>
                   </div>
 
                   {wallet.isConnected ? (
-                    <span className="text-[11px] font-mono text-emerald-400 font-semibold flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span className="text-[11px] font-mono text-emerald-700 font-bold flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                       {wallet.address?.slice(0, 6)}...{wallet.address?.slice(-4)}
                     </span>
                   ) : (
                     <button
                       type="button"
                       onClick={openWalletModal}
-                      className="px-3 py-1.5 rounded-lg bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/30 border border-cyan-500/40 text-xs font-semibold transition-all flex items-center gap-1.5"
+                      className="px-3.5 py-1.5 rounded-xl bg-teal-600 text-white hover:bg-teal-500 text-xs font-bold shadow-md shadow-teal-600/20 transition-all flex items-center gap-1.5"
                     >
                       <Key className="w-3.5 h-3.5" />
                       <span>Connect Wallet</span>
@@ -175,13 +167,13 @@ export default function GovtDashboard() {
 
               {/* STEP 2 */}
               <div className="space-y-4">
-                <div className="flex items-center gap-2 text-xs font-bold text-white">
-                  <span className="w-6 h-6 rounded-full bg-slate-800 text-cyan-400 text-xs font-bold flex items-center justify-center">2</span>
-                  <span>Step 2: Hospital Identity &amp; Public Key</span>
+                <div className="flex items-center gap-2.5 text-xs font-extrabold text-slate-900">
+                  <span className="w-7 h-7 rounded-full bg-slate-100 text-teal-700 border border-slate-200 text-xs font-extrabold flex items-center justify-center">2</span>
+                  <span>Step 2: Enter Hospital Identity &amp; Public Key</span>
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
                     Hospital Institution Name
                   </label>
                   <input
@@ -190,12 +182,12 @@ export default function GovtDashboard() {
                     placeholder="e.g. Apollo Hospitals (Bangalore)"
                     value={hospitalName}
                     onChange={(e) => setHospitalName(e.target.value)}
-                    className="w-full bg-[#0F172A] border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-500"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-teal-600 focus:bg-white transition-all"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
                     Stellar Wallet Public Key (G...)
                   </label>
                   <input
@@ -204,22 +196,22 @@ export default function GovtDashboard() {
                     placeholder="GBANGALORE99HOSPITAL99..."
                     value={hospitalAddress}
                     onChange={(e) => setHospitalAddress(e.target.value)}
-                    className="w-full bg-[#0F172A] border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-500 font-mono"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs font-mono text-slate-900 focus:outline-none focus:border-teal-600 focus:bg-white transition-all"
                   />
                 </div>
               </div>
 
               {/* STEP 3 */}
-              <div className="space-y-3 pt-2 border-t border-slate-800">
-                <div className="flex items-center gap-2 text-xs font-bold text-white mb-2">
-                  <span className="w-6 h-6 rounded-full bg-slate-800 text-cyan-400 text-xs font-bold flex items-center justify-center">3</span>
-                  <span>Step 3: Execute On-Chain Authorization</span>
+              <div className="space-y-3 pt-2 border-t border-slate-100">
+                <div className="flex items-center gap-2.5 text-xs font-extrabold text-slate-900 mb-2">
+                  <span className="w-7 h-7 rounded-full bg-slate-100 text-teal-700 border border-slate-200 text-xs font-extrabold flex items-center justify-center">3</span>
+                  <span>Step 3: Execute On-Chain Whitelisting</span>
                 </div>
 
                 <button
                   type="submit"
                   disabled={isExecuting}
-                  className="w-full py-3.5 bg-gradient-to-r from-cyan-600 to-teal-500 hover:from-cyan-500 hover:to-teal-400 disabled:from-slate-700 disabled:to-slate-700 text-slate-950 font-bold rounded-xl shadow-lg shadow-cyan-500/20 disabled:shadow-none transition-all flex items-center justify-center gap-2 text-xs sm:text-sm"
+                  className="w-full py-4 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-500 hover:to-cyan-500 disabled:from-slate-300 disabled:to-slate-300 text-white font-extrabold rounded-xl shadow-lg shadow-teal-600/20 disabled:shadow-none transition-all flex items-center justify-center gap-2 text-xs sm:text-sm"
                 >
                   {isExecuting ? (
                     <>
@@ -246,40 +238,40 @@ export default function GovtDashboard() {
           {/* List of Whitelisted Hospital Nodes */}
           <div className="lg:col-span-6 space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-base font-bold text-white flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-cyan-400" />
+              <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-teal-600" />
                 Whitelisted Hospital Registry
               </h2>
-              <span className="text-xs text-slate-400 font-mono">{authorizedHospitals.length} Nodes Active</span>
+              <span className="text-xs text-slate-500 font-mono font-bold">{authorizedHospitals.length} Active Nodes</span>
             </div>
 
             {authorizedHospitals.length === 0 ? (
-              <div className="glass-panel bg-[#0B132B] p-10 rounded-3xl border border-slate-800 text-center space-y-3">
-                <Building2 className="w-10 h-10 text-slate-600 mx-auto" />
-                <h3 className="text-sm font-bold text-white">No Hospital Nodes Added Yet</h3>
-                <p className="text-xs text-slate-400 max-w-xs mx-auto">
+              <div className="bg-white p-10 rounded-3xl border border-slate-200 shadow-lg shadow-slate-200/50 text-center space-y-3">
+                <Building2 className="w-10 h-10 text-slate-300 mx-auto" />
+                <h3 className="text-sm font-bold text-slate-900">No Hospital Nodes Whitelisted Yet</h3>
+                <p className="text-xs text-slate-500 max-w-xs mx-auto font-medium">
                   Use the 3-step form to authorize healthcare institution public keys on the Soroban Registry Contract.
                 </p>
               </div>
             ) : (
               <div className="space-y-3">
                 {authorizedHospitals.map((hosp, i) => (
-                  <div key={i} className="glass-panel bg-[#0B132B] p-5 rounded-2xl border border-slate-800 space-y-3">
+                  <div key={i} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-md shadow-slate-200/40 space-y-3">
                     <div className="flex items-start justify-between flex-wrap gap-2">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                        <div className="w-9 h-9 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-600 font-bold">
                           <Building2 className="w-4 h-4" />
                         </div>
                         <div>
-                          <p className="font-bold text-white text-sm">{hosp.name}</p>
+                          <p className="font-extrabold text-slate-900 text-sm">{hosp.name}</p>
                           <div className="flex items-center gap-2 mt-0.5">
-                            <p className="font-mono text-[11px] text-cyan-400">{hosp.address.slice(0, 16)}...{hosp.address.slice(-6)}</p>
+                            <p className="font-mono text-[11px] text-teal-700 font-semibold">{hosp.address.slice(0, 16)}...{hosp.address.slice(-6)}</p>
                             <button
                               onClick={() => handleCopy(hosp.address)}
-                              className="text-slate-500 hover:text-slate-300"
+                              className="text-slate-400 hover:text-slate-600"
                             >
                               {copiedAddress === hosp.address ? (
-                                <Check className="w-3.5 h-3.5 text-emerald-400" />
+                                <Check className="w-3.5 h-3.5 text-emerald-600" />
                               ) : (
                                 <Copy className="w-3.5 h-3.5" />
                               )}
@@ -288,19 +280,19 @@ export default function GovtDashboard() {
                         </div>
                       </div>
 
-                      <span className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded-full flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3" />
+                      <span className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
                         Whitelisted
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between text-[10px] text-slate-500 font-mono pt-2 border-t border-slate-800/80">
+                    <div className="flex items-center justify-between text-[10px] text-slate-500 font-mono pt-2 border-t border-slate-100">
                       <span>Whitelisted: {new Date(hosp.grantedAt).toLocaleDateString()}</span>
                       <a
                         href={`https://stellar.expert/explorer/testnet/tx/${hosp.txHash}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-cyan-400 hover:underline flex items-center gap-1"
+                        className="text-teal-600 hover:underline flex items-center gap-1 font-bold"
                       >
                         <span>Tx: {hosp.txHash.slice(0, 12)}...</span>
                         <ExternalLink className="w-3 h-3" />

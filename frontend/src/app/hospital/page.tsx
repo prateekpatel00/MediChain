@@ -1,10 +1,7 @@
 'use client';
 
 // ============================================================
-// MediChain Hospital Action Center (/hospital)
-// ============================================================
-// Inter-Hospital Health Data Exchange Portal powered by Soroban Smart Contracts.
-// Role-guarded for authorized Hospital Nodes.
+// MediChain Hospital Action Center (/hospital) — Light Theme 3D
 // ============================================================
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -113,7 +110,6 @@ export default function HospitalDashboard() {
     }
   }, [uploadPatientId, uploadCategory, uploadFindings, fileData]);
 
-  // Native WebCrypto Hashing
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) {
@@ -138,7 +134,6 @@ export default function HospitalDashboard() {
     }
   };
 
-  // Action: Upload Record
   const handleUploadRecord = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!wallet.isConnected || !wallet.address) {
@@ -189,7 +184,6 @@ export default function HospitalDashboard() {
     }
   };
 
-  // Action: Request Access
   const handleRequestAccess = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!wallet.isConnected || !wallet.address) {
@@ -224,7 +218,6 @@ export default function HospitalDashboard() {
     }
   };
 
-  // Action: Approve Access
   const handleApproveAccess = async (request: AccessRequest) => {
     if (!wallet.address) return;
 
@@ -241,7 +234,6 @@ export default function HospitalDashboard() {
     }
   };
 
-  // Action: Reject Access
   const handleRejectAccess = async (request: AccessRequest) => {
     if (!wallet.address) return;
 
@@ -254,7 +246,6 @@ export default function HospitalDashboard() {
     }
   };
 
-  // Action: View Record
   const handleViewRecord = async (request: AccessRequest) => {
     if (!wallet.address) return;
 
@@ -297,18 +288,18 @@ export default function HospitalDashboard() {
   // Role Guarding: Require Hospital Node authentication
   if (user.role !== 'hospital') {
     return (
-      <div className="min-h-[80vh] flex flex-col items-center justify-center p-6 text-center bg-[#070D1F]">
-        <div className="max-w-md space-y-4 glass-panel bg-[#0B132B] p-8 rounded-3xl border border-slate-800 shadow-2xl">
-          <div className="w-12 h-12 rounded-2xl bg-[#0F172A] border border-cyan-500/30 flex items-center justify-center text-cyan-400 mx-auto">
+      <div className="min-h-[80vh] flex flex-col items-center justify-center p-6 text-center bg-[#F8FAFC]">
+        <div className="max-w-md space-y-4 bg-white p-8 rounded-3xl border border-slate-200 shadow-2xl shadow-slate-200/80">
+          <div className="w-12 h-12 rounded-2xl bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-600 mx-auto">
             <Building2 className="w-6 h-6" />
           </div>
-          <h2 className="text-xl font-bold text-white">Hospital Node Access Required</h2>
-          <p className="text-xs text-slate-400">
+          <h2 className="text-xl font-extrabold text-slate-900">Hospital Node Access Required</h2>
+          <p className="text-xs text-slate-600 font-medium">
             You must be logged in as a verified Healthcare Institution Node to access patient records and request controls.
           </p>
           <Link
             href="/login"
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-cyan-600 to-teal-500 hover:from-cyan-500 hover:to-teal-400 text-slate-950 font-bold rounded-xl text-xs shadow-lg transition-all w-full"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs shadow-lg shadow-slate-900/10 transition-all w-full"
           >
             <UserCheck className="w-4 h-4" />
             <span>Go to Portal Login</span>
@@ -322,21 +313,19 @@ export default function HospitalDashboard() {
   const approvedRequests = accessRequests.filter((r) => r.status === 'Approved');
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#070D1F] text-slate-100 font-sans">
-      {/* Background glow */}
-      <div className="fixed top-0 left-1/4 w-[600px] h-[600px] bg-cyan-500/5 rounded-full blur-3xl pointer-events-none -z-10" />
-
+    <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-slate-900 font-sans">
+      
       {/* SUB-HEADER */}
-      <div className="bg-[#0B132B] border-b border-slate-800 px-4 sm:px-6 py-3">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2 text-xs">
-          <div className="flex items-center gap-2 text-cyan-300">
-            <Building2 className="w-4 h-4 text-cyan-400" />
-            <span className="font-bold text-white">Node: {user.hospitalName || user.username}</span>
-            <span className="text-slate-600">•</span>
-            <span className="font-mono text-[11px] text-slate-400">Core Contract: {CORE_CONTRACT_ID.slice(0, 12)}...</span>
+      <div className="bg-white border-b border-slate-200/80 shadow-sm px-4 sm:px-6 py-3.5">
+        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2 text-slate-800 font-bold">
+            <Building2 className="w-4 h-4 text-teal-600" />
+            <span>Node: {user.hospitalName || user.username}</span>
+            <span className="text-slate-300">•</span>
+            <span className="font-mono text-[11px] text-slate-500 font-normal">Core Contract: {CORE_CONTRACT_ID.slice(0, 14)}...</span>
           </div>
 
-          <Link href="/transactions" className="text-cyan-400 hover:underline flex items-center gap-1 font-mono text-[11px]">
+          <Link href="/transactions" className="text-teal-600 hover:underline flex items-center gap-1 font-bold text-xs">
             <span>Activity Log</span>
             <ExternalLink className="w-3 h-3" />
           </Link>
@@ -347,11 +336,11 @@ export default function HospitalDashboard() {
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 py-8 w-full space-y-8">
 
         {/* TABS */}
-        <div className="flex border-b border-slate-800 gap-4 sm:gap-8 overflow-x-auto">
+        <div className="flex border-b border-slate-200 gap-4 sm:gap-8 overflow-x-auto">
           <button
             onClick={() => setActiveTab('upload')}
-            className={`pb-3 text-xs sm:text-sm font-bold flex items-center gap-2 border-b-2 whitespace-nowrap transition-all ${
-              activeTab === 'upload' ? 'text-cyan-400 border-cyan-400' : 'text-slate-400 border-transparent'
+            className={`pb-3.5 text-xs sm:text-sm font-bold flex items-center gap-2 border-b-2 whitespace-nowrap transition-all ${
+              activeTab === 'upload' ? 'text-teal-600 border-teal-600' : 'text-slate-500 border-transparent hover:text-slate-800'
             }`}
           >
             <Upload className="w-4 h-4" />
@@ -359,22 +348,22 @@ export default function HospitalDashboard() {
           </button>
           <button
             onClick={() => setActiveTab('requests')}
-            className={`pb-3 text-xs sm:text-sm font-bold flex items-center gap-2 border-b-2 whitespace-nowrap transition-all ${
-              activeTab === 'requests' ? 'text-cyan-400 border-cyan-400' : 'text-slate-400 border-transparent'
+            className={`pb-3.5 text-xs sm:text-sm font-bold flex items-center gap-2 border-b-2 whitespace-nowrap transition-all ${
+              activeTab === 'requests' ? 'text-teal-600 border-teal-600' : 'text-slate-500 border-transparent hover:text-slate-800'
             }`}
           >
             <Share2 className="w-4 h-4" />
             Action Center (Requests Queue)
             {pendingRequests.length > 0 && (
-              <span className="bg-cyan-500 text-slate-950 text-[10px] font-extrabold px-2 py-0.5 rounded-full">
+              <span className="bg-teal-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full">
                 {pendingRequests.length}
               </span>
             )}
           </button>
           <button
             onClick={() => setActiveTab('approved')}
-            className={`pb-3 text-xs sm:text-sm font-bold flex items-center gap-2 border-b-2 whitespace-nowrap transition-all ${
-              activeTab === 'approved' ? 'text-cyan-400 border-cyan-400' : 'text-slate-400 border-transparent'
+            className={`pb-3.5 text-xs sm:text-sm font-bold flex items-center gap-2 border-b-2 whitespace-nowrap transition-all ${
+              activeTab === 'approved' ? 'text-teal-600 border-teal-600' : 'text-slate-500 border-transparent hover:text-slate-800'
             }`}
           >
             <Eye className="w-4 h-4" />
@@ -387,26 +376,26 @@ export default function HospitalDashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             
             {/* Form */}
-            <div className="lg:col-span-5 glass-panel bg-[#0B132B] p-6 rounded-3xl border border-slate-800 space-y-4">
-              <div className="border-b border-slate-800 pb-3">
-                <h2 className="text-base font-bold text-white flex items-center gap-2">
-                  <FileUp className="w-5 h-5 text-cyan-400" />
+            <div className="lg:col-span-5 bg-white p-6 rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/50 space-y-4">
+              <div className="border-b border-slate-100 pb-3">
+                <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                  <FileUp className="w-5 h-5 text-teal-600" />
                   Upload &amp; Hash Medical Report
                 </h2>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-xs text-slate-500 font-medium mt-0.5">
                   WebCrypto computes binary SHA-256 hash. Cross-contract call verifies Govt Registry whitelist before committing on-chain.
                 </p>
               </div>
 
               <form onSubmit={handleUploadRecord} className="space-y-4">
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-300 mb-1 uppercase tracking-wider">
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1 uppercase tracking-wider">
                     Medical Report File (PDF / Image)
                   </label>
                   <div
                     onClick={() => fileInputRef.current?.click()}
                     className={`border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition-all ${
-                      fileData ? 'border-emerald-500/50 bg-emerald-950/20' : 'border-slate-800 bg-[#0F172A]'
+                      fileData ? 'border-emerald-300 bg-emerald-50/50' : 'border-slate-300 bg-slate-50 hover:bg-slate-100/70'
                     }`}
                   >
                     <input
@@ -419,26 +408,26 @@ export default function HospitalDashboard() {
 
                     {isHashingFile ? (
                       <div className="flex flex-col items-center gap-2 py-1">
-                        <Loader2 className="w-5 h-5 text-cyan-400 animate-spin" />
-                        <p className="text-xs text-cyan-300 font-semibold">Computing SHA-256 binary hash…</p>
+                        <Loader2 className="w-5 h-5 text-teal-600 animate-spin" />
+                        <p className="text-xs text-teal-700 font-bold">Computing SHA-256 binary hash…</p>
                       </div>
                     ) : fileData ? (
                       <div className="flex items-center justify-between text-left">
-                        <div className="flex items-center gap-2">
-                          <FileCheck className="w-5 h-5 text-emerald-400" />
+                        <div className="flex items-center gap-2.5">
+                          <FileCheck className="w-5 h-5 text-emerald-600" />
                           <div>
-                            <p className="text-xs font-bold text-white truncate max-w-[180px]">{fileData.fileName}</p>
-                            <p className="text-[10px] text-slate-400">{formatBytes(fileData.fileSize)}</p>
+                            <p className="text-xs font-bold text-slate-900 truncate max-w-[180px]">{fileData.fileName}</p>
+                            <p className="text-[10px] text-slate-500 font-medium">{formatBytes(fileData.fileSize)}</p>
                           </div>
                         </div>
-                        <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-500/30">
+                        <span className="text-[10px] font-mono text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300 font-bold">
                           ✓ SHA-256 Hashed
                         </span>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center gap-1.5 py-1">
-                        <FileUp className="w-7 h-7 text-cyan-400/80" />
-                        <p className="text-xs font-semibold text-slate-200">Click to select PDF or Image</p>
+                        <FileUp className="w-7 h-7 text-teal-600" />
+                        <p className="text-xs font-bold text-slate-700">Click to select PDF or Image report</p>
                       </div>
                     )}
                   </div>
@@ -446,36 +435,36 @@ export default function HospitalDashboard() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-300 mb-1 uppercase tracking-wider">Patient ID</label>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1 uppercase tracking-wider">Patient ID</label>
                     <input
                       type="text"
                       required
                       placeholder="PAT-001-BLR"
                       value={uploadPatientId}
                       onChange={(e) => setUploadPatientId(e.target.value)}
-                      className="w-full bg-[#0F172A] border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-cyan-500"
+                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-mono text-slate-900 focus:outline-none focus:border-teal-600 focus:bg-white"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-300 mb-1 uppercase tracking-wider">Patient Name</label>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1 uppercase tracking-wider">Patient Name</label>
                     <input
                       type="text"
                       required
                       placeholder="Arjun Mehta"
                       value={uploadPatientName}
                       onChange={(e) => setUploadPatientName(e.target.value)}
-                      className="w-full bg-[#0F172A] border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500"
+                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-teal-600 focus:bg-white font-medium"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-300 mb-1 uppercase tracking-wider">Category</label>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1 uppercase tracking-wider">Category</label>
                   <select
                     value={uploadCategory}
                     onChange={(e) => setUploadCategory(e.target.value as any)}
-                    className="w-full bg-[#0F172A] border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-teal-600 focus:bg-white font-medium"
                   >
                     <option value="Blood Diagnostics">Blood Diagnostics (Haematology)</option>
                     <option value="Cardiology ECG">Cardiology ECG / Echo</option>
@@ -486,24 +475,24 @@ export default function HospitalDashboard() {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-300 mb-1 uppercase tracking-wider">Report Summary</label>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1 uppercase tracking-wider">Report Summary</label>
                   <textarea
                     rows={2}
                     required
                     placeholder="e.g. Hemoglobin 14.2 g/dL, Platelets 250,000/mcL."
                     value={uploadFindings}
                     onChange={(e) => setUploadFindings(e.target.value)}
-                    className="w-full bg-[#0F172A] border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500 resize-none"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-teal-600 focus:bg-white resize-none font-medium"
                   />
                 </div>
 
                 {liveHash && (
-                  <div className="p-3 bg-[#0F172A] border border-slate-800 rounded-xl space-y-1">
-                    <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between">
                       <span>Native WebCrypto SHA-256 Hash</span>
-                      <span className="text-cyan-400 font-mono">256-bit</span>
+                      <span className="text-teal-700 font-mono">256-bit</span>
                     </p>
-                    <p className="font-mono text-[10px] text-cyan-300 break-all bg-slate-950 p-1.5 rounded border border-slate-800">
+                    <p className="font-mono text-[10px] text-teal-800 break-all bg-white p-1.5 rounded border border-slate-200 font-semibold">
                       {liveHash}
                     </p>
                   </div>
@@ -512,7 +501,7 @@ export default function HospitalDashboard() {
                 <button
                   type="submit"
                   disabled={isExecuting}
-                  className="w-full py-3 bg-gradient-to-r from-cyan-600 to-teal-500 hover:from-cyan-500 hover:to-teal-400 disabled:from-slate-700 disabled:to-slate-700 text-slate-950 font-bold rounded-xl shadow-lg shadow-cyan-500/20 disabled:shadow-none transition-all flex items-center justify-center gap-2 text-xs sm:text-sm"
+                  className="w-full py-3.5 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-500 hover:to-cyan-500 disabled:from-slate-300 disabled:to-slate-300 text-white font-extrabold rounded-xl shadow-lg shadow-teal-600/20 disabled:shadow-none transition-all flex items-center justify-center gap-2 text-xs sm:text-sm"
                 >
                   {isExecuting ? (
                     <>
@@ -537,43 +526,43 @@ export default function HospitalDashboard() {
             {/* List */}
             <div className="lg:col-span-7 space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-base font-bold text-white flex items-center gap-2">
-                  <Database className="w-5 h-5 text-cyan-400" />
+                <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                  <Database className="w-5 h-5 text-teal-600" />
                   On-Chain Record Hashes
                 </h2>
-                <span className="text-xs text-slate-400 font-mono">{patientRecords.length} Records</span>
+                <span className="text-xs text-slate-500 font-mono font-bold">{patientRecords.length} Records</span>
               </div>
 
               {patientRecords.length === 0 ? (
-                <div className="glass-panel bg-[#0B132B] p-10 rounded-3xl border border-slate-800 text-center space-y-2">
-                  <Database className="w-8 h-8 text-slate-600 mx-auto" />
-                  <p className="text-xs text-slate-400">
+                <div className="bg-white p-10 rounded-3xl border border-slate-200 shadow-lg shadow-slate-200/50 text-center space-y-2">
+                  <Database className="w-8 h-8 text-slate-300 mx-auto" />
+                  <p className="text-xs text-slate-500 font-medium">
                     No medical records uploaded yet for this node session. Upload a PDF/Image report to anchor its hash on-chain.
                   </p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {patientRecords.map((rec, i) => (
-                    <div key={i} className="glass-panel bg-[#0B132B] p-5 rounded-2xl border border-slate-800 space-y-3">
+                    <div key={i} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-md shadow-slate-200/40 space-y-3">
                       <div className="flex items-start justify-between flex-wrap gap-2">
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="font-mono text-xs font-bold text-cyan-300">{rec.patientId}</span>
-                            <span className="text-slate-600">•</span>
-                            <span className="text-sm font-bold text-white">{rec.patientName}</span>
+                            <span className="font-mono text-xs font-bold text-teal-700">{rec.patientId}</span>
+                            <span className="text-slate-300">•</span>
+                            <span className="text-sm font-extrabold text-slate-900">{rec.patientName}</span>
                           </div>
-                          <p className="text-xs text-slate-400 mt-0.5">{rec.category}</p>
+                          <p className="text-xs text-slate-500 font-medium mt-0.5">{rec.category}</p>
                         </div>
 
-                        <span className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 rounded-full flex items-center gap-1">
-                          <Lock className="w-3 h-3" />
+                        <span className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider bg-teal-50 text-teal-700 border border-teal-200 rounded-full flex items-center gap-1">
+                          <Lock className="w-3 h-3 text-teal-600" />
                           CID Hash On-Chain
                         </span>
                       </div>
 
-                      <div className="bg-[#0F172A] p-3 rounded-xl border border-slate-800 space-y-1.5 font-mono text-xs">
-                        <p className="text-[10px] text-slate-500 uppercase tracking-wider font-sans">IPFS CID Hash:</p>
-                        <p className="text-cyan-300 text-[11px] break-all">{rec.ipfsCid}</p>
+                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1.5 font-mono text-xs">
+                        <p className="text-[10px] text-slate-500 uppercase tracking-wider font-sans font-bold">IPFS CID Hash:</p>
+                        <p className="text-teal-800 text-[11px] break-all font-semibold">{rec.ipfsCid}</p>
                       </div>
 
                       <div className="flex items-center justify-between text-[10px] text-slate-500 font-mono pt-1">
@@ -582,7 +571,7 @@ export default function HospitalDashboard() {
                           href={`https://stellar.expert/explorer/testnet/tx/${rec.txHash}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-cyan-400 hover:underline flex items-center gap-1"
+                          className="text-teal-600 hover:underline flex items-center gap-1 font-bold"
                         >
                           <span>Tx: {rec.txHash.slice(0, 10)}...</span>
                           <ExternalLink className="w-3 h-3" />
@@ -602,38 +591,38 @@ export default function HospitalDashboard() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                  <Share2 className="w-5 h-5 text-cyan-400" />
+                <h2 className="text-lg font-extrabold text-slate-900 flex items-center gap-2">
+                  <Share2 className="w-5 h-5 text-teal-600" />
                   Access Request Queue
                 </h2>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-slate-500 font-medium">
                   Review &amp; approve/reject inter-hospital sharing requests logged on Soroban.
                 </p>
               </div>
-              <span className="text-xs text-slate-400 font-mono">{accessRequests.length} Total Requests</span>
+              <span className="text-xs text-slate-500 font-mono font-bold">{accessRequests.length} Total Requests</span>
             </div>
 
             {accessRequests.length === 0 ? (
-              <div className="glass-panel bg-[#0B132B] p-12 rounded-3xl border border-slate-800 text-center space-y-3">
-                <Share2 className="w-10 h-10 text-slate-600 mx-auto" />
-                <h3 className="text-base font-bold text-white">No Access Requests in Queue</h3>
-                <p className="text-xs text-slate-400 max-w-sm mx-auto">
+              <div className="bg-white p-12 rounded-3xl border border-slate-200 shadow-lg shadow-slate-200/50 text-center space-y-3">
+                <Share2 className="w-10 h-10 text-slate-300 mx-auto" />
+                <h3 className="text-base font-bold text-slate-900">No Access Requests in Queue</h3>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto font-medium">
                   When another authorized hospital node requests access to a patient record, it will appear here for on-chain approval.
                 </p>
               </div>
             ) : (
               <div className="space-y-3">
                 {accessRequests.map((req) => (
-                  <div key={req.id} className="glass-panel bg-[#0B132B] p-5 rounded-2xl border border-slate-800 space-y-4">
+                  <div key={req.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-md shadow-slate-200/40 space-y-4">
                     <div className="flex items-start justify-between flex-wrap gap-3">
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-white text-sm">{req.requestingHospitalName}</span>
-                          <span className="text-xs text-slate-400">requested record</span>
-                          <span className="font-mono text-xs font-bold text-cyan-300">{req.patientId}</span>
+                          <span className="font-extrabold text-slate-900 text-sm">{req.requestingHospitalName}</span>
+                          <span className="text-xs text-slate-500 font-medium">requested record</span>
+                          <span className="font-mono text-xs font-bold text-teal-700">{req.patientId}</span>
                         </div>
-                        <p className="text-xs text-slate-400 mt-1">
-                          Clinical Reason: <strong className="text-slate-200 font-normal">"{req.clinicalReason}"</strong>
+                        <p className="text-xs text-slate-600 mt-1 font-medium">
+                          Clinical Reason: <strong className="text-slate-900 font-semibold">"{req.clinicalReason}"</strong>
                         </p>
                       </div>
 
@@ -642,26 +631,26 @@ export default function HospitalDashboard() {
                           px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border flex items-center gap-1.5
                           ${
                             req.status === 'Approved'
-                              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                               : req.status === 'Rejected'
-                              ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
-                              : 'bg-cyan-500/10 text-cyan-300 border-cyan-500/30'
+                              ? 'bg-rose-50 text-rose-700 border-rose-200'
+                              : 'bg-teal-50 text-teal-700 border-teal-200'
                           }
                         `}
                       >
-                        {req.status === 'Approved' && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />}
-                        {req.status === 'Rejected' && <Ban className="w-3.5 h-3.5 text-rose-400" />}
-                        {req.status === 'Pending' && <Clock className="w-3.5 h-3.5 text-cyan-400" />}
+                        {req.status === 'Approved' && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />}
+                        {req.status === 'Rejected' && <Ban className="w-3.5 h-3.5 text-rose-600" />}
+                        {req.status === 'Pending' && <Clock className="w-3.5 h-3.5 text-teal-600" />}
                         {req.status}
                       </span>
                     </div>
 
                     {req.status === 'Pending' && (
-                      <div className="flex items-center gap-3 pt-2 border-t border-slate-800">
+                      <div className="flex items-center gap-3 pt-2 border-t border-slate-100">
                         <button
                           onClick={() => handleApproveAccess(req)}
                           disabled={isExecuting}
-                          className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-slate-950 font-bold rounded-xl text-xs transition-all flex items-center gap-1.5 shadow-lg shadow-emerald-500/20"
+                          className="px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl text-xs transition-all flex items-center gap-1.5 shadow-md shadow-emerald-600/20"
                         >
                           <CheckCircle2 className="w-4 h-4" />
                           <span>Approve Access On-Chain</span>
@@ -669,7 +658,7 @@ export default function HospitalDashboard() {
                         <button
                           onClick={() => handleRejectAccess(req)}
                           disabled={isExecuting}
-                          className="px-4 py-2 bg-[#0F172A] hover:bg-rose-950/40 border border-slate-700 hover:border-rose-500/40 text-rose-400 font-bold rounded-xl text-xs transition-all flex items-center gap-1.5"
+                          className="px-4 py-2.5 bg-white hover:bg-rose-50 border border-slate-200 hover:border-rose-300 text-rose-700 font-bold rounded-xl text-xs transition-all flex items-center gap-1.5 shadow-sm"
                         >
                           <Ban className="w-4 h-4" />
                           <span>Reject Request</span>
@@ -688,20 +677,20 @@ export default function HospitalDashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             
             {/* Request Form */}
-            <div className="lg:col-span-5 glass-panel bg-[#0B132B] p-6 rounded-3xl border border-slate-800 space-y-4">
-              <div className="border-b border-slate-800 pb-3">
-                <h2 className="text-base font-bold text-white flex items-center gap-2">
-                  <Share2 className="w-5 h-5 text-cyan-400" />
+            <div className="lg:col-span-5 bg-white p-6 rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/50 space-y-4">
+              <div className="border-b border-slate-100 pb-3">
+                <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                  <Share2 className="w-5 h-5 text-teal-600" />
                   Request Patient Record Access
                 </h2>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-xs text-slate-500 font-medium mt-0.5">
                   Submit an inter-hospital request to access records owned by another node.
                 </p>
               </div>
 
               <form onSubmit={handleRequestAccess} className="space-y-4">
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-300 mb-1 uppercase tracking-wider">
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1 uppercase tracking-wider">
                     Target Patient ID
                   </label>
                   <input
@@ -710,12 +699,12 @@ export default function HospitalDashboard() {
                     placeholder="PAT-001-BLR"
                     value={reqPatientId}
                     onChange={(e) => setReqPatientId(e.target.value)}
-                    className="w-full bg-[#0F172A] border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-cyan-500"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-mono text-slate-900 focus:outline-none focus:border-teal-600 focus:bg-white"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-300 mb-1 uppercase tracking-wider">
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1 uppercase tracking-wider">
                     Clinical Reason
                   </label>
                   <textarea
@@ -724,14 +713,14 @@ export default function HospitalDashboard() {
                     placeholder="e.g. Urgent cardiology consult for transferred patient."
                     value={reqReason}
                     onChange={(e) => setReqReason(e.target.value)}
-                    className="w-full bg-[#0F172A] border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-500 resize-none"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-teal-600 focus:bg-white resize-none font-medium"
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={isExecuting}
-                  className="w-full py-3 bg-gradient-to-r from-cyan-600 to-teal-500 hover:from-cyan-500 hover:to-teal-400 disabled:from-slate-700 disabled:to-slate-700 text-slate-950 font-bold rounded-xl shadow-lg shadow-cyan-500/20 disabled:shadow-none transition-all flex items-center justify-center gap-2 text-xs sm:text-sm"
+                  className="w-full py-3.5 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-500 hover:to-cyan-500 disabled:from-slate-300 disabled:to-slate-300 text-white font-extrabold rounded-xl shadow-lg shadow-teal-600/20 disabled:shadow-none transition-all flex items-center justify-center gap-2 text-xs sm:text-sm"
                 >
                   {isExecuting ? (
                     <>
@@ -756,17 +745,17 @@ export default function HospitalDashboard() {
             {/* Approved Viewer */}
             <div className="lg:col-span-7 space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-base font-bold text-white flex items-center gap-2">
-                  <Eye className="w-5 h-5 text-cyan-400" />
+                <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                  <Eye className="w-5 h-5 text-teal-600" />
                   View Record (RBAC Verified)
                 </h2>
-                <span className="text-xs text-slate-400 font-mono">On-Chain Controlled</span>
+                <span className="text-xs text-slate-500 font-mono font-bold">On-Chain Controlled</span>
               </div>
 
               {approvedRequests.length === 0 ? (
-                <div className="glass-panel bg-[#0B132B] p-8 rounded-3xl border border-slate-800 text-center space-y-2">
-                  <Lock className="w-8 h-8 text-slate-600 mx-auto" />
-                  <p className="text-xs text-slate-400">
+                <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-lg shadow-slate-200/50 text-center space-y-2">
+                  <Lock className="w-8 h-8 text-slate-300 mx-auto" />
+                  <p className="text-xs text-slate-500 font-medium">
                     No approved access grants yet. Submit an access request or approve one in the Action Center.
                   </p>
                 </div>
@@ -777,17 +766,17 @@ export default function HospitalDashboard() {
                     const isFetching = fetchingCid === req.patientId;
 
                     return (
-                      <div key={req.id} className="glass-panel bg-[#0B132B] p-5 rounded-2xl border border-emerald-500/30 space-y-4">
+                      <div key={req.id} className="bg-white p-5 rounded-2xl border border-emerald-200 shadow-md shadow-emerald-500/5 space-y-4">
                         <div className="flex items-center justify-between">
                           <div>
-                            <span className="font-mono text-xs font-bold text-emerald-400">{req.patientId}</span>
-                            <p className="text-xs text-slate-300 font-semibold">{req.patientName}</p>
+                            <span className="font-mono text-xs font-bold text-emerald-700">{req.patientId}</span>
+                            <p className="text-xs text-slate-900 font-extrabold">{req.patientName}</p>
                           </div>
 
                           <button
                             onClick={() => handleViewRecord(req)}
                             disabled={isFetching}
-                            className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-slate-950 font-bold rounded-xl text-xs transition-all flex items-center gap-1.5 shadow-lg shadow-emerald-500/20"
+                            className="px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl text-xs transition-all flex items-center gap-1.5 shadow-md shadow-emerald-600/20"
                           >
                             {isFetching ? (
                               <>
@@ -804,28 +793,28 @@ export default function HospitalDashboard() {
                         </div>
 
                         {data && (
-                          <div className="p-4 bg-[#0F172A] rounded-xl border border-slate-800 space-y-3 animate-in fade-in duration-200">
-                            <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                              <span className="text-xs font-bold text-white">{data.category}</span>
-                              <span className="text-[10px] font-mono text-cyan-400">{data.physician}</span>
+                          <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3 animate-in fade-in duration-200">
+                            <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                              <span className="text-xs font-bold text-slate-900">{data.category}</span>
+                              <span className="text-[10px] font-mono text-teal-700 font-bold">{data.physician}</span>
                             </div>
 
-                            <p className="text-xs text-slate-300">{data.findings}</p>
+                            <p className="text-xs text-slate-700 font-medium">{data.findings}</p>
 
                             {data.fileData && (
-                              <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between text-xs">
-                                <div className="flex items-center gap-2">
-                                  <FileCheck className="w-4 h-4 text-emerald-400" />
+                              <div className="p-3 bg-white rounded-xl border border-slate-200 flex items-center justify-between text-xs shadow-sm">
+                                <div className="flex items-center gap-2.5">
+                                  <FileCheck className="w-4 h-4 text-emerald-600" />
                                   <div>
-                                    <p className="font-bold text-white text-xs">{data.fileData.fileName}</p>
-                                    <p className="text-[10px] text-slate-400">{formatBytes(data.fileData.fileSize)}</p>
+                                    <p className="font-bold text-slate-900 text-xs">{data.fileData.fileName}</p>
+                                    <p className="text-[10px] text-slate-500 font-medium">{formatBytes(data.fileData.fileSize)}</p>
                                   </div>
                                 </div>
                                 {data.fileData.dataUrl && (
                                   <a
                                     href={data.fileData.dataUrl}
                                     download={data.fileData.fileName}
-                                    className="px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all"
+                                    className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 rounded-lg text-xs font-bold flex items-center gap-1 transition-all"
                                   >
                                     Download Attachment
                                   </a>
@@ -833,7 +822,7 @@ export default function HospitalDashboard() {
                               </div>
                             )}
 
-                            <div className="font-mono text-[10px] text-cyan-300 bg-slate-950 p-2 rounded border border-slate-800 break-all">
+                            <div className="font-mono text-[10px] text-teal-800 bg-white p-2 rounded border border-slate-200 break-all font-semibold">
                               IPFS CID: {data.cid}
                             </div>
                           </div>

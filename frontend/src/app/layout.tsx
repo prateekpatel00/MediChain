@@ -9,7 +9,7 @@ import { Header } from '../components/Header';
 import { WalletModal } from '../components/WalletModal';
 
 export const metadata: Metadata = {
-  title: 'MediChain | Enterprise Inter-Hospital Health Exchange',
+  title: 'MediChain | Enterprise Healthcare Data Protocol',
   description:
     'Decentralized, privacy-preserving inter-hospital patient record exchange powered by Stellar Soroban smart contracts.',
 };
@@ -20,7 +20,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="light">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -29,7 +29,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="font-['Plus_Jakarta_Sans',sans-serif] min-h-screen bg-[#070D1F] text-slate-100 flex flex-col justify-between antialiased selection:bg-cyan-500/30">
+      <body className="font-['Plus_Jakarta_Sans',sans-serif] min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col justify-between antialiased selection:bg-teal-500/20 selection:text-teal-900">
         <AuthProvider>
           <WalletProvider>
             <TransactionProvider>
@@ -39,14 +39,15 @@ export default function RootLayout({
               <Toaster
                 position="bottom-right"
                 toastOptions={{
-                  className: '!bg-[#0F172A] !text-slate-100 !border !border-slate-800 !shadow-2xl !text-xs',
+                  className: '!bg-white !text-slate-900 !border !border-slate-200 !shadow-2xl !text-xs !rounded-2xl',
                   duration: 5000,
                   style: {
-                    background: '#0F172A',
-                    color: '#F8FAFC',
-                    border: '1px solid #1E293B',
-                    padding: '12px 16px',
-                    borderRadius: '12px',
+                    background: '#FFFFFF',
+                    color: '#0F172A',
+                    border: '1px solid #E2E8F0',
+                    boxShadow: '0 20px 40px -15px rgba(15, 23, 42, 0.12)',
+                    padding: '12px 18px',
+                    borderRadius: '16px',
                   },
                 }}
               />

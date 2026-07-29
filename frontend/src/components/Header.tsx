@@ -1,7 +1,7 @@
 'use client';
 
 // ============================================================
-// MediChain Enterprise Header Navbar
+// MediChain Enterprise Header Navbar (Polygon / MetaMask Aesthetic)
 // ============================================================
 
 import React, { useState } from 'react';
@@ -15,11 +15,13 @@ import {
   Wallet,
   Menu,
   X,
-  CheckCircle,
+  CheckCircle2,
   LogOut,
   LogIn,
   ChevronRight,
   UserCheck,
+  Sparkles,
+  BadgeCheck,
 } from 'lucide-react';
 
 import { useWallet } from '../context/WalletContext';
@@ -33,45 +35,45 @@ export function Header() {
 
   // Dynamic Navigation Links based on Role
   const navLinks = [
-    { href: '/', label: 'Home', icon: Shield, public: true },
+    { href: '/', label: 'Home', icon: Shield },
     ...(user.role === 'govt'
-      ? [{ href: '/govt', label: 'Government Admin Portal', icon: Landmark, public: false }]
+      ? [{ href: '/govt', label: 'Government Admin Portal', icon: Landmark }]
       : []),
     ...(user.role === 'hospital'
-      ? [{ href: '/hospital', label: 'Hospital Action Center', icon: Building2, public: false }]
+      ? [{ href: '/hospital', label: 'Hospital Action Center', icon: Building2 }]
       : []),
     ...(isAuthenticated
-      ? [{ href: '/transactions', label: 'Transaction Center', icon: History, public: false }]
+      ? [{ href: '/transactions', label: 'Transaction Center', icon: History }]
       : [
-          { href: '/#features', label: 'Capabilities', icon: Building2, public: true },
-          { href: '/#security', label: 'Security & Compliance', icon: Shield, public: true },
+          { href: '/#features', label: 'Capabilities', icon: Building2 },
+          { href: '/#security', label: 'Security & Compliance', icon: Shield },
         ]),
   ];
 
   return (
-    <header className="sticky top-0 z-40 glass-panel bg-[#0B132B]/90 backdrop-blur-md border-b border-slate-800/80 px-4 sm:px-6 py-3">
+    <header className="sticky top-0 z-40 glass-header bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-md shadow-slate-200/50 px-4 sm:px-6 py-3.5">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         
-        {/* Brand Logo & Name (Clean, Professional Enterprise Branding) */}
+        {/* Brand Logo & Name (Clean, Professional Enterprise SaaS Branding) */}
         <Link href="/" className="flex items-center gap-3 group">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 to-teal-400 p-0.5 shadow-lg shadow-cyan-500/20 transition-transform group-hover:scale-105">
-            <div className="w-full h-full bg-[#070D1F] rounded-[10px] flex items-center justify-center">
-              <Shield className="w-5 h-5 text-cyan-400" />
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-slate-900 via-teal-600 to-teal-500 p-0.5 shadow-lg shadow-teal-500/20 transition-transform group-hover:scale-105">
+            <div className="w-full h-full bg-white rounded-[14px] flex items-center justify-center">
+              <Shield className="w-5 h-5 text-teal-600" />
             </div>
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-extrabold text-base tracking-tight text-white">MediChain</span>
-              <span className="px-2 py-0.5 text-[10px] font-mono font-semibold uppercase bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 rounded-md">
+              <span className="font-extrabold text-lg tracking-tight text-slate-900">MediChain</span>
+              <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-teal-50 text-teal-700 border border-teal-200/80 rounded-full">
                 Enterprise
               </span>
             </div>
-            <p className="text-[10px] text-slate-400 hidden sm:block">Inter-Hospital Health Exchange Protocol</p>
+            <p className="text-[10px] text-slate-500 hidden sm:block font-medium">Inter-Hospital Health Protocol</p>
           </div>
         </Link>
 
         {/* Desktop Navigation Links */}
-        <nav className="hidden md:flex items-center gap-1 bg-[#0F172A]/90 border border-slate-800/90 p-1 rounded-xl">
+        <nav className="hidden md:flex items-center gap-1.5 bg-slate-100/80 border border-slate-200 p-1.5 rounded-2xl shadow-inner">
           {navLinks.map((link) => {
             const Icon = link.icon;
             const isActive = pathname === link.href;
@@ -80,16 +82,15 @@ export function Header() {
                 key={link.href}
                 href={link.href}
                 className={`
-                  flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold
-                  transition-all
+                  flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all
                   ${
                     isActive
-                      ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                      ? 'bg-white text-slate-900 shadow-md shadow-slate-200/80 border border-slate-200/80'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
                   }
                 `}
               >
-                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-cyan-400' : 'text-slate-500'}`} />
+                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-teal-600' : 'text-slate-400'}`} />
                 <span>{link.label}</span>
               </Link>
             );
@@ -97,31 +98,40 @@ export function Header() {
         </nav>
 
         {/* Right Action Controls */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-2.5 sm:gap-3">
           
-          {/* Wallet Button */}
+          {/* Wallet Button & Authorized Node Badge */}
           {wallet.isConnected && wallet.address ? (
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={openWalletModal}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 text-xs font-mono hover:border-emerald-400 transition-all"
-              >
-                <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
-                <span className="font-bold hidden sm:inline">{wallet.walletName}:</span>
-                <span>{wallet.address.slice(0, 4)}...{wallet.address.slice(-4)}</span>
-              </button>
-              <button
-                onClick={disconnectWallet}
-                title="Disconnect Wallet"
-                className="p-1.5 rounded-xl bg-[#0F172A] border border-slate-800 text-slate-400 hover:text-rose-400 hover:border-rose-500/40 text-xs transition-all"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
+            <div className="flex items-center gap-2">
+              
+              {/* Authorized Node Badge */}
+              <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold shadow-sm">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>Authorized Node</span>
+              </div>
+
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={openWalletModal}
+                  className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900 text-white text-xs font-mono font-bold shadow-md shadow-slate-900/10 hover:bg-slate-800 transition-all"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5 text-teal-400" />
+                  <span className="hidden sm:inline">{wallet.walletName}:</span>
+                  <span>{wallet.address.slice(0, 4)}...{wallet.address.slice(-4)}</span>
+                </button>
+                <button
+                  onClick={disconnectWallet}
+                  title="Disconnect Wallet"
+                  className="p-2 rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 shadow-sm transition-all"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
           ) : (
             <button
               onClick={openWalletModal}
-              className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-cyan-600 to-teal-500 hover:from-cyan-500 hover:to-teal-400 text-slate-950 font-bold text-xs shadow-md shadow-cyan-500/20 transition-all"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-500 hover:to-cyan-500 text-white font-bold text-xs shadow-lg shadow-teal-600/20 transition-all hover:shadow-teal-600/30"
             >
               <Wallet className="w-3.5 h-3.5" />
               <span>Connect Wallet</span>
@@ -131,16 +141,16 @@ export function Header() {
           {/* Web2 Auth User Badge / Login CTA */}
           {isAuthenticated ? (
             <div className="flex items-center gap-2">
-              <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#0F172A] border border-slate-800 text-xs">
-                <UserCheck className="w-3.5 h-3.5 text-cyan-400" />
-                <span className="text-slate-300 font-semibold text-[11px] truncate max-w-[140px]">
+              <div className="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-xs shadow-sm">
+                <UserCheck className="w-3.5 h-3.5 text-teal-600" />
+                <span className="text-slate-800 font-bold text-[11px] truncate max-w-[130px]">
                   {user.username}
                 </span>
               </div>
               <button
                 onClick={logout}
                 title="Logout Session"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-rose-500/40 text-slate-400 hover:text-rose-400 text-xs font-semibold transition-all"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:border-rose-200 text-slate-600 hover:text-rose-600 hover:bg-rose-50 text-xs font-bold shadow-sm transition-all"
               >
                 <LogOut className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Logout</span>
@@ -149,7 +159,7 @@ export function Header() {
           ) : (
             <Link
               href="/login"
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#0F172A] border border-cyan-500/30 hover:border-cyan-400 text-cyan-300 font-semibold text-xs transition-all"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-md shadow-slate-900/10 transition-all"
             >
               <LogIn className="w-3.5 h-3.5" />
               <span>Portal Login</span>
@@ -159,7 +169,7 @@ export function Header() {
           {/* Mobile Hamburger Toggle */}
           <button
             onClick={() => setMobileMenuOpen((v) => !v)}
-            className="md:hidden p-2 rounded-xl bg-[#0F172A] border border-slate-800 text-slate-400 hover:text-white transition-all"
+            className="md:hidden p-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 shadow-sm transition-all"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -169,7 +179,7 @@ export function Header() {
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden mt-3 pt-3 border-t border-slate-800/80 space-y-2 animate-in slide-in-from-top-2 duration-200">
+        <div className="md:hidden mt-3 pt-3 border-t border-slate-200 space-y-2 animate-in slide-in-from-top-2 duration-200">
           {navLinks.map((link) => {
             const Icon = link.icon;
             const isActive = pathname === link.href;
@@ -179,19 +189,19 @@ export function Header() {
                 href={link.href}
                 onClick={() => setMobileMenuOpen(false)}
                 className={`
-                  flex items-center justify-between p-3 rounded-xl border text-sm font-semibold transition-all
+                  flex items-center justify-between p-3 rounded-xl text-sm font-bold border transition-all
                   ${
                     isActive
-                      ? 'bg-cyan-950/40 border-cyan-500/40 text-cyan-300'
-                      : 'bg-[#0F172A]/80 border-slate-800 text-slate-300 hover:bg-slate-800'
+                      ? 'bg-teal-50 border-teal-200 text-teal-800'
+                      : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
                   }
                 `}
               >
                 <div className="flex items-center gap-3">
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-cyan-400' : 'text-slate-400'}`} />
+                  <Icon className={`w-4 h-4 ${isActive ? 'text-teal-600' : 'text-slate-400'}`} />
                   <span>{link.label}</span>
                 </div>
-                <ChevronRight className="w-4 h-4 text-slate-500" />
+                <ChevronRight className="w-4 h-4 text-slate-400" />
               </Link>
             );
           })}

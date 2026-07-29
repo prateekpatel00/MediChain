@@ -1,7 +1,10 @@
 'use client';
 
 // ============================================================
-// MediChain Transaction Center & Activity Feed (/transactions) — Dashboard Layout
+// MediChain Transaction Center & Activity Feed (/transactions)
+// ============================================================
+// Role-isolated transaction feed: Hospital nodes view ONLY node-scoped transactions,
+// while Government Super Admin views government registry actions.
 // ============================================================
 
 import React, { useState } from 'react';
@@ -25,11 +28,13 @@ import {
 } from 'lucide-react';
 
 import { useAuth } from '../../context/AuthContext';
+import { useWallet } from '../../context/WalletContext';
 import { useTransactions } from '../../context/TransactionContext';
 import type { TransactionItem, TransactionStatus, ContractType } from '../../types/medichain';
 
 export default function TransactionCenterPage() {
   const { user } = useAuth();
+  const { wallet } = useWallet();
   const { transactions, clearTransactions } = useTransactions();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -37,8 +42,22 @@ export default function TransactionCenterPage() {
   const [contractFilter, setContractFilter] = useState<'All' | ContractType>('All');
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  // Filtering Logic
-  const filteredTransactions = transactions.filter((tx) => {
+  // Role-Based Isolation Filter
+  const roleIsolatedTransactions = transactions.filter((tx) => {
+    if (user.role === 'hospital') {
+      // Show ONLY operations matching hospital caller wallet or hospital name
+      const isCaller = wallet.address && tx.caller.toLowerCase() === wallet.address.toLowerCase();
+      const isHospitalAction = tx.contractType === 'Core Contract' || tx.details.toLowerCase().includes('hospital');
+      return isCaller || isHospitalAction;
+    } else if (user.role === 'govt') {
+      // Show Registry Contract & admin actions
+      return tx.contractType === 'Registry Contract' || tx.method.includes('grant') || tx.method.includes('add_hospital');
+    }
+    return true;
+  });
+
+  // Additional Search & Filter logic
+  const filteredTransactions = roleIsolatedTransactions.filter((tx) => {
     const matchesSearch =
       tx.method.toLowerCase().includes(searchQuery.toLowerCase()) ||
       tx.hash.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -51,10 +70,10 @@ export default function TransactionCenterPage() {
     return matchesSearch && matchesStatus && matchesContract;
   });
 
-  const totalCount = transactions.length;
-  const confirmedCount = transactions.filter((t) => t.status === 'Confirmed').length;
-  const registryCount = transactions.filter((t) => t.contractType === 'Registry Contract').length;
-  const coreCount = transactions.filter((t) => t.contractType === 'Core Contract').length;
+  const totalCount = roleIsolatedTransactions.length;
+  const confirmedCount = roleIsolatedTransactions.filter((t) => t.status === 'Confirmed').length;
+  const registryCount = roleIsolatedTransactions.filter((t) => t.contractType === 'Registry Contract').length;
+  const coreCount = roleIsolatedTransactions.filter((t) => t.contractType === 'Core Contract').length;
 
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -98,9 +117,16 @@ export default function TransactionCenterPage() {
                 <History className="w-5 h-5" />
               </div>
               <div>
-                <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900">Transaction Center &amp; Activity Feed</h1>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900">Transaction Center &amp; Activity Feed</h1>
+                  <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-teal-50 text-teal-700 border border-teal-200/80 rounded-full">
+                    {user.role === 'govt' ? 'Govt Scope' : 'Node Scope'}
+                  </span>
+                </div>
                 <p className="text-xs text-slate-500 font-medium">
-                  Real-time Soroban ledger lifecycle tracking: Pending → Processing → Confirmed / Failed
+                  {user.role === 'govt'
+                    ? 'Super admin whitelisting operations and Soroban registry event log.'
+                    : 'Node-specific medical uploads and inter-hospital record access transactions.'}
                 </p>
               </div>
             </div>
@@ -122,9 +148,9 @@ export default function TransactionCenterPage() {
         {/* STATS CARDS */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-md shadow-slate-200/50 space-y-1">
-            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Actions</p>
+            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Scoped Actions</p>
             <p className="text-2xl font-extrabold text-slate-900 font-mono">{totalCount}</p>
-            <p className="text-[10px] text-slate-400 font-medium">Recorded in workspace</p>
+            <p className="text-[10px] text-slate-400 font-medium">Role-isolated operations</p>
           </div>
 
           <div className="bg-white p-5 rounded-2xl border border-emerald-200 shadow-md shadow-emerald-500/5 space-y-1">
@@ -208,9 +234,9 @@ export default function TransactionCenterPage() {
               <History className="w-6 h-6" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-base font-extrabold text-slate-900">Awaiting On-Chain Activity...</h3>
+              <h3 className="text-base font-extrabold text-slate-900">Awaiting Node Activity...</h3>
               <p className="text-xs text-slate-500 max-w-md mx-auto font-medium">
-                No ledger events have been recorded yet. Perform an authorization, upload, or access request in the Govt or Hospital portal to log real Soroban transactions.
+                No transactions recorded for this role scope. Execute an action in your workspace to populate the real-time Soroban log.
               </p>
             </div>
             <div className="pt-2">

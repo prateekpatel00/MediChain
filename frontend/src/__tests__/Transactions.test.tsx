@@ -35,6 +35,6 @@ describe('Transaction Center Page', () => {
 
     expect(screen.getByText('Transaction Center & Activity Feed')).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/Search by Tx Hash/i)).toBeInTheDocument();
-    expect(screen.getByText('Awaiting On-Chain Activity...')).toBeInTheDocument();
+    expect(screen.getByText(/Awaiting/i)).toBeInTheDocument();
   });
 });

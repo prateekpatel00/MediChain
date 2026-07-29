@@ -1,7 +1,7 @@
 'use client';
 
 // ============================================================
-// MediChain Fixed Left Sidebar Component
+// MediChain Fixed Left Sidebar Component (Dashboard Layout)
 // ============================================================
 // Professional Enterprise Dashboard Sidebar featuring Shielded Pulse branding,
 // active section highlights, and role-based links.
@@ -13,17 +13,12 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
   Building2,
-  Users,
   History,
   FileBarChart,
   Settings,
-  Shield,
-  Activity,
   Landmark,
-  Layers,
   ChevronRight,
   LogOut,
-  Sparkles,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -34,7 +29,7 @@ export function Sidebar() {
   if (!isAuthenticated) return null;
 
   const navItems = [
-    { href: '/', label: 'Overview', icon: LayoutDashboard },
+    { href: '/overview', label: 'Overview', icon: LayoutDashboard },
     ...(user.role === 'govt'
       ? [{ href: '/govt', label: 'Hospitals Registry', icon: Landmark }]
       : []),
@@ -42,20 +37,24 @@ export function Sidebar() {
       ? [{ href: '/hospital', label: 'Hospital Operations', icon: Building2 }]
       : []),
     { href: '/transactions', label: 'Transaction Center', icon: History },
-    { href: '/#features', label: 'Reports & Audit', icon: FileBarChart },
-    { href: '/#security', label: 'Settings & Security', icon: Settings },
+    { href: '/reports', label: 'Reports & Audit', icon: FileBarChart },
+    { href: '/settings', label: 'Settings & Security', icon: Settings },
   ];
 
   return (
     <aside className="hidden md:flex flex-col w-64 bg-white border-r border-slate-200/80 shadow-sm fixed top-0 bottom-0 left-0 z-30 pt-4 px-4 pb-6 justify-between">
       
       <div className="space-y-6">
-        {/* Brand Logo & Name (Shielded Pulse Identity) */}
-        <Link href="/" className="flex items-center gap-3 px-2 group">
+        {/* Brand Logo & Name (Shielded Pulse Identity Vector) */}
+        <Link href="/overview" className="flex items-center gap-3 px-2 group">
           <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 via-teal-500 to-cyan-600 p-0.5 shadow-lg shadow-teal-500/20 transition-transform group-hover:scale-105">
-            <div className="w-full h-full bg-white rounded-[14px] flex items-center justify-center relative">
-              <Shield className="w-5 h-5 text-teal-600" />
-              <Activity className="w-3 h-3 text-emerald-500 absolute top-1 right-1 stroke-[2.5]" />
+            <div className="w-full h-full bg-white rounded-[14px] flex items-center justify-center p-1.5">
+              <svg viewBox="0 0 24 24" fill="none" className="w-full h-full text-teal-600" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                {/* Shield Outline */}
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                {/* Pulse Line */}
+                <path d="M8 12h2l1.5-3 2.5 6 1.5-3h2.5" className="text-emerald-500" stroke="currentColor" strokeWidth="2" />
+              </svg>
             </div>
           </div>
           <div>

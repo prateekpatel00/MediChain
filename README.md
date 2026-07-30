@@ -1,7 +1,6 @@
 # 🏥 MediChain — Decentralized Inter-Hospital Healthcare Data Protocol
 
 [![Stellar Soroban](https://img.shields.io/badge/Stellar-Soroban_v21-blue.svg?style=for-the-badge&logo=stellar)](https://stellar.org/soroban)
-[![SCF Level 3 Grant](https://img.shields.io/badge/Stellar_SCF-Level_3_Grant_Submission-teal.svg?style=for-the-badge&logo=stellar)](https://communityfund.stellar.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-emerald.svg?style=for-the-badge)](LICENSE)
 [![CI/CD Pipeline](https://img.shields.io/badge/CI%2FCD-GitHub_Actions_Passing-success.svg?style=for-the-badge&logo=githubactions)](https://github.com/prateekpatel00/MediChain/actions)
 [![Next.js 14](https://img.shields.io/badge/Next.js-14_App_Router-black.svg?style=for-the-badge&logo=nextdotjs)](https://nextjs.org/)
@@ -104,10 +103,10 @@ The smart contracts are live and verified on the **Stellar Testnet Network**:
 | **Core Logic Smart Contract** | `CD4AOWVNSBCQPVMSNCSYKA5RI3Z24RH6UNXS3KTVQQW3ZDQJOJPFL4HB` | [Stellar Expert Core](https://stellar.expert/explorer/testnet/contract/CD4AOWVNSBCQPVMSNCSYKA5RI3Z24RH6UNXS3KTVQQW3ZDQJOJPFL4HB) |
 | **Super Admin Owner Key** | `GCVGEHLD34OAWVIQYWYNLEU2YFOXINO4FEXLGPV6DBHFIFDQFCWQJDI5` | [Stellar Expert Account](https://stellar.expert/explorer/testnet/account/GCVGEHLD34OAWVIQYWYNLEU2YFOXINO4FEXLGPV6DBHFIFDQFCWQJDI5) |
 
-> 📌 **Deployment Placeholder Note for Custom Testnets**:
+> 📌 **Deployment Placeholder Note for Custom Testnet**:
 > ```env
-> NEXT_PUBLIC_REGISTRY_CONTRACT_ID=[PASTE_NEW_REGISTRY_CONTRACT_ID_HERE]
-> NEXT_PUBLIC_CORE_CONTRACT_ID=[PASTE_NEW_CORE_CONTRACT_ID_HERE]
+> NEXT_PUBLIC_REGISTRY_CONTRACT_ID=CDD5BMSSEQSLBFQCZYYGFUNWJ5BH243YE7NHZSZJCZAICMRYXI7RCMJS
+> NEXT_PUBLIC_CORE_CONTRACT_ID=CD4AOWVNSBCQPVMSNCSYKA5RI3Z24RH6UNXS3KTVQQW3ZDQJOJPFL4HB
 > ```
 
 ---
@@ -184,4 +183,3 @@ MediChain Ecosystem
 
 * **Author**: Prateek Patel ([@prateekpatel00](https://github.com/prateekpatel00))
 * **License**: MIT License — see [LICENSE](LICENSE) for details.
-* **Submission**: Built for the **Stellar Community Fund (SCF) Level 3 Grant**.

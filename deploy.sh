@@ -14,7 +14,9 @@
 set -euo pipefail
 
 # Ensure Cargo bin is in PATH for stellar CLI across Windows / WSL / Git Bash
-export PATH="/c/Users/PRATEEK/.cargo/bin:$HOME/.cargo/bin:$PATH"
+export PATH="/mnt/c/Users/PRATEEK/.cargo/bin:/c/Users/PRATEEK/.cargo/bin:$HOME/.cargo/bin:C:/Users/PRATEEK/.cargo/bin:$PATH"
+
+STELLAR_BIN=$(command -v stellar 2>/dev/null || command -v stellar.exe 2>/dev/null || echo "stellar.exe")
 
 # ----------------------------------------------------------------
 # CONFIGURATION
@@ -23,9 +25,6 @@ NETWORK="testnet"
 RPC_URL="https://soroban-testnet.stellar.org"
 PASSPHRASE="Test SDF Network ; September 2015"
 DEPLOYER="${DEPLOYER:-govt_admin}"
-
-# ABSOLUTE OWNER (User's Freighter Wallet Public Key)
-ADMIN_ADDRESS="GCVGEHLD34OAWVIQYWYNLEU2YFOXINO4FEXLGPV6DBHFIFDQFCWQJDI5"
 
 ENV_FILE="$(dirname "$0")/frontend/.env.local"
 CONTRACTS_DIR="$(dirname "$0")/contracts"
@@ -45,20 +44,25 @@ log_warn() { echo "  ⚠️  $1"; }
 # ----------------------------------------------------------------
 log_step "STEP 0 — Preflight & Identity Checks"
 
-command -v stellar >/dev/null 2>&1 || {
-    echo "❌ stellar CLI not found. Install with: cargo install --locked stellar-cli"; exit 1;
-}
-command -v cargo   >/dev/null 2>&1 || { echo "❌ cargo not found."; exit 1; }
+if ! $STELLAR_BIN --version >/dev/null 2>&1; then
+    echo "❌ stellar CLI not found ($STELLAR_BIN). Install with: cargo install --locked stellar-cli"; exit 1;
+fi
 
-DEPLOYER_ADDR=$(stellar keys address "$DEPLOYER" 2>/dev/null) || {
+DEPLOYER_ADDR=$($STELLAR_BIN keys address "$DEPLOYER" 2>/dev/null || echo "")
+if [ -z "$DEPLOYER_ADDR" ]; then
     echo "Creating and funding CLI deployment identity: $DEPLOYER..."
-    stellar keys generate "$DEPLOYER" --network "$NETWORK" || true
-    stellar keys fund    "$DEPLOYER" --network "$NETWORK" || true
-    DEPLOYER_ADDR=$(stellar keys address "$DEPLOYER")
-}
+    $STELLAR_BIN keys generate "$DEPLOYER" --network "$NETWORK" || true
+    $STELLAR_BIN keys fund    "$DEPLOYER" --network "$NETWORK" || true
+    DEPLOYER_ADDR=$($STELLAR_BIN keys address "$DEPLOYER")
+fi
+
+# ABSOLUTE OWNER (User's Freighter Wallet Public Key)
+ADMIN_ADDRESS="${ADMIN_ADDRESS:-GCVGEHLD34OAWVIQYWYNLEU2YFOXINO4FEXLGPV6DBHFIFDQFCWQJDI5}"
 
 log_ok "CLI Gas Paymaster : $DEPLOYER ($DEPLOYER_ADDR)"
-log_ok "Super Admin Owner  : $ADMIN_ADDRESS (User Freighter Key)"
+log_ok "Super Admin Owner  : $ADMIN_ADDRESS"
+
+CARGO_BIN=$(command -v cargo 2>/dev/null || command -v cargo.exe 2>/dev/null || echo "cargo.exe")
 
 # ----------------------------------------------------------------
 # STEP 1 — Build Contracts (wasm32-unknown-unknown)
@@ -67,43 +71,70 @@ log_step "STEP 1 — Building Registry Contract"
 
 cd "$CONTRACTS_DIR"
 
-cargo build \
+$CARGO_BIN build \
     --package medichain-registry \
     --target wasm32-unknown-unknown \
     --release
 
+$STELLAR_BIN contract optimize --wasm "$REGISTRY_WASM" || true
+if [ -f "target/wasm32-unknown-unknown/release/medichain_registry.optimized.wasm" ]; then
+    REGISTRY_WASM="target/wasm32-unknown-unknown/release/medichain_registry.optimized.wasm"
+fi
+
 if [ ! -f "$REGISTRY_WASM" ]; then
     echo "❌ Registry WASM not found at $REGISTRY_WASM"; exit 1;
 fi
-log_ok "Registry WASM built: $REGISTRY_WASM"
+log_ok "Registry WASM built & optimized: $REGISTRY_WASM"
 
-log_step "STEP 1b — Building Core Contract"
+log_step "STEP 1b — Building & Optimizing Core Contract"
 
-cargo build \
+$CARGO_BIN build \
     --package medichain-core \
     --target wasm32-unknown-unknown \
     --release
 
+$STELLAR_BIN contract optimize --wasm "$CORE_WASM" || true
+if [ -f "target/wasm32-unknown-unknown/release/medichain_core.optimized.wasm" ]; then
+    CORE_WASM="target/wasm32-unknown-unknown/release/medichain_core.optimized.wasm"
+fi
+
 if [ ! -f "$CORE_WASM" ]; then
     echo "❌ Core WASM not found at $CORE_WASM"; exit 1;
 fi
-log_ok "Core WASM built: $CORE_WASM"
+log_ok "Core WASM built & optimized: $CORE_WASM"
+
+deploy_contract() {
+    local WASM_PATH="$1"
+    local CID=""
+    for attempt in 1 2 3; do
+        local OUT
+        OUT=$($STELLAR_BIN contract deploy \
+            --wasm "$WASM_PATH" \
+            --source "$DEPLOYER" \
+            --network "$NETWORK" \
+            --rpc-url "$RPC_URL" \
+            --network-passphrase "$PASSPHRASE" 2>&1 || true)
+        CID=$(echo "$OUT" | grep -oE 'C[A-Z0-9]{55}' | tail -n1 || echo "")
+        if [ -n "$CID" ]; then
+            echo "$CID"
+            return 0
+        fi
+        log_warn "Attempt $attempt failed: $OUT" >&2
+        sleep 3
+    done
+    echo ""
+    return 1
+}
 
 # ----------------------------------------------------------------
 # STEP 2 — Deploy Registry Contract
 # ----------------------------------------------------------------
 log_step "STEP 2 — Deploying Registry Contract to Stellar Testnet"
 
-REGISTRY_CONTRACT_ID=$(stellar contract deploy \
-    --wasm "$REGISTRY_WASM" \
-    --source "$DEPLOYER" \
-    --network "$NETWORK" \
-    --rpc-url "$RPC_URL" \
-    --network-passphrase "$PASSPHRASE" \
-    2>&1 | grep -E '^[A-Z0-9]{56}$' | tail -n1)
+REGISTRY_CONTRACT_ID=$(deploy_contract "$REGISTRY_WASM")
 
 if [ -z "$REGISTRY_CONTRACT_ID" ]; then
-    echo "❌ Failed to capture Registry Contract ID."; exit 1;
+    echo "❌ Failed to deploy Registry Contract after retries."; exit 1;
 fi
 log_ok "Registry Contract ID: $REGISTRY_CONTRACT_ID"
 
@@ -112,16 +143,10 @@ log_ok "Registry Contract ID: $REGISTRY_CONTRACT_ID"
 # ----------------------------------------------------------------
 log_step "STEP 3 — Deploying Core Contract to Stellar Testnet"
 
-CORE_CONTRACT_ID=$(stellar contract deploy \
-    --wasm "$CORE_WASM" \
-    --source "$DEPLOYER" \
-    --network "$NETWORK" \
-    --rpc-url "$RPC_URL" \
-    --network-passphrase "$PASSPHRASE" \
-    2>&1 | grep -E '^[A-Z0-9]{56}$' | tail -n1)
+CORE_CONTRACT_ID=$(deploy_contract "$CORE_WASM")
 
 if [ -z "$CORE_CONTRACT_ID" ]; then
-    echo "❌ Failed to capture Core Contract ID."; exit 1;
+    echo "❌ Failed to deploy Core Contract after retries."; exit 1;
 fi
 log_ok "Core Contract ID: $CORE_CONTRACT_ID"
 
@@ -130,7 +155,7 @@ log_ok "Core Contract ID: $CORE_CONTRACT_ID"
 # ----------------------------------------------------------------
 log_step "STEP 4 — Initializing Registry (Owner: $ADMIN_ADDRESS)"
 
-stellar contract invoke \
+$STELLAR_BIN contract invoke \
     --id "$REGISTRY_CONTRACT_ID" \
     --source "$DEPLOYER" \
     --network "$NETWORK" \
@@ -146,7 +171,7 @@ log_ok "Registry initialized! Super-Admin Owner set to: $ADMIN_ADDRESS"
 # ----------------------------------------------------------------
 log_step "STEP 5 — Initializing Core Contract (Linking to Registry)"
 
-stellar contract invoke \
+$STELLAR_BIN contract invoke \
     --id "$CORE_CONTRACT_ID" \
     --source "$DEPLOYER" \
     --network "$NETWORK" \
@@ -162,7 +187,7 @@ log_ok "Core initialized and linked to Registry Contract ID: $REGISTRY_CONTRACT_
 # ----------------------------------------------------------------
 log_step "STEP 6 — Updating frontend/.env.local"
 
-cd "$(dirname "$0")"
+cd ..
 
 cat > "$ENV_FILE" << EOF
 # ── MediChain Production Environment Configuration ─────────────

@@ -43,6 +43,7 @@ import type {
 
 import { useAuth } from '../../context/AuthContext';
 import { useWallet } from '../../context/WalletContext';
+import { Logo } from '../../components/Logo';
 import { useStellar } from '../../hooks/useStellar';
 import { CORE_CONTRACT_ID } from '../../services/stellar';
 
@@ -289,9 +290,10 @@ export default function HospitalDashboard() {
   if (user.role !== 'hospital') {
     return (
       <div className="min-h-[80vh] flex flex-col items-center justify-center p-6 text-center bg-[#F8FAFC] md:ml-64">
-        <div className="max-w-md space-y-4 bg-white p-8 rounded-3xl border border-slate-200 shadow-2xl shadow-slate-200/80">
-          <div className="w-12 h-12 rounded-2xl bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-600 mx-auto">
-            <Building2 className="w-6 h-6" />
+        <div className="max-w-md space-y-4 bg-white p-8 rounded-3xl border border-slate-200 shadow-2xl shadow-slate-200/80 flex flex-col items-center">
+          <Logo size="lg" href="/hospital" showBadge badgeText="Node Verified" />
+          <div className="w-10 h-10 rounded-2xl bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-600 mt-2">
+            <Building2 className="w-5 h-5" />
           </div>
           <h2 className="text-xl font-extrabold text-slate-900">Hospital Node Access Required</h2>
           <p className="text-xs text-slate-600 font-medium">
@@ -318,11 +320,17 @@ export default function HospitalDashboard() {
       {/* SUB-HEADER */}
       <div className="bg-white border-b border-slate-200/80 shadow-sm px-4 sm:px-6 py-3.5">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2 text-slate-800 font-bold">
-            <Building2 className="w-4 h-4 text-teal-600" />
-            <span>Node: {user.hospitalName || user.username}</span>
+          <div className="flex items-center gap-3">
+            <Logo size="sm" href="/hospital" showBadge badgeText="Node Verified" />
             <span className="text-slate-300">•</span>
-            <span className="font-mono text-[11px] text-slate-500 font-normal">Core Contract: {CORE_CONTRACT_ID.slice(0, 14)}...</span>
+            <div className="flex items-center gap-1.5 text-slate-700 font-bold">
+              <Building2 className="w-3.5 h-3.5 text-teal-600" />
+              <span>Node: {user.hospitalName || user.username}</span>
+            </div>
+            <span className="text-slate-300">•</span>
+            <span className="font-mono text-[11px] text-slate-500 font-normal hidden sm:inline">
+              Core Contract: {CORE_CONTRACT_ID.slice(0, 14)}...
+            </span>
           </div>
 
           <Link href="/transactions" className="text-teal-600 hover:underline flex items-center gap-1 font-bold text-xs">

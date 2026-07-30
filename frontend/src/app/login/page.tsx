@@ -19,6 +19,7 @@ import {
 import toast from 'react-hot-toast';
 
 import { useAuth } from '../../context/AuthContext';
+import { Logo } from '../../components/Logo';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -52,17 +53,18 @@ export default function LoginPage() {
     <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-slate-900 font-sans">
       <main className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 py-16 w-full flex flex-col justify-center space-y-8">
         
-        {/* Header */}
-        <div className="text-center space-y-3">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-50 border border-teal-200 text-teal-800 text-xs font-bold shadow-sm">
-            <Shield className="w-4 h-4 text-teal-600" />
-            <span>Role-Based Authentication Wrapper</span>
-          </div>
+        {/* Header with Global Brand Logo */}
+        <div className="text-center space-y-4 flex flex-col items-center">
+          <Logo
+            size="xl"
+            href="/"
+            showBadge
+            badgeText="Role-Based Authentication"
+            showSubtitle
+            subtitleText="Enterprise Inter-Hospital Health Exchange"
+          />
 
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-            Enterprise Portal Access
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto font-medium">
+          <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto font-medium pt-1">
             Select your node authorization type below to authenticate and enter your operational workspace.
           </p>
         </div>

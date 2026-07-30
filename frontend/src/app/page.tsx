@@ -30,6 +30,7 @@ import {
   UserCheck,
   BadgeCheck,
 } from 'lucide-react';
+import { Logo } from '../components/Logo';
 import { useAuth } from '../context/AuthContext';
 import { useWallet } from '../context/WalletContext';
 
@@ -310,15 +311,12 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-4 gap-8 mb-8">
           
           <div className="space-y-3 sm:col-span-2">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-400 via-teal-500 to-cyan-600 p-0.5 shadow-md shadow-teal-500/20">
-                <div className="w-full h-full bg-white rounded-[10px] flex items-center justify-center relative">
-                  <Shield className="w-4 h-4 text-teal-600" />
-                  <Activity className="w-2.5 h-2.5 text-emerald-500 absolute top-0.5 right-0.5 stroke-[2.5]" />
-                </div>
-              </div>
-              <span className="font-extrabold text-slate-900 text-base">MediChain Protocol</span>
-            </div>
+            <Logo
+              size="md"
+              href="/"
+              showBadge
+              badgeText="Protocol"
+            />
             <p className="text-xs text-slate-500 max-w-sm font-medium">
               Decentralized, privacy-preserving inter-hospital patient data exchange protocol powered by Stellar Soroban smart contracts.
             </p>

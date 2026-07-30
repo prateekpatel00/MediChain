@@ -31,6 +31,8 @@ import {
 import { useWallet } from '../context/WalletContext';
 import { useAuth } from '../context/AuthContext';
 
+import { Logo } from './Logo';
+
 export function Header() {
   const pathname = usePathname();
   const { wallet, openWalletModal, disconnectWallet } = useWallet();
@@ -65,23 +67,14 @@ export function Header() {
         
         {/* Left Side: Brand (Unauthenticated) OR Top Search Bar (Authenticated) */}
         {!isAuthenticated ? (
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-400 via-teal-500 to-cyan-600 p-0.5 shadow-lg shadow-teal-500/20 transition-transform group-hover:scale-105">
-              <div className="w-full h-full bg-white rounded-[14px] flex items-center justify-center relative">
-                <Shield className="w-5 h-5 text-teal-600" />
-                <Activity className="w-3 h-3 text-emerald-500 absolute top-1 right-1 stroke-[2.5]" />
-              </div>
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-extrabold text-lg tracking-tight text-slate-900">MediChain</span>
-                <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-teal-50 text-teal-700 border border-teal-200/80 rounded-full">
-                  Enterprise Protocol
-                </span>
-              </div>
-              <p className="text-[10px] text-slate-500 hidden sm:block font-medium">Inter-Hospital Health Exchange</p>
-            </div>
-          </Link>
+          <Logo
+            size="md"
+            href="/"
+            showBadge
+            badgeText="Enterprise Protocol"
+            showSubtitle
+            subtitleText="Inter-Hospital Health Exchange"
+          />
         ) : (
           <div className="flex items-center gap-4 flex-1 max-w-md">
             {/* Global Search Bar */}

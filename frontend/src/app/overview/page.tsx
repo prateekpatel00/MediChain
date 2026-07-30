@@ -28,6 +28,7 @@ import {
 
 import { useAuth } from '../../context/AuthContext';
 import { useWallet } from '../../context/WalletContext';
+import { Logo } from '../../components/Logo';
 import { REGISTRY_CONTRACT_ID, CORE_CONTRACT_ID } from '../../services/stellar';
 
 export default function OverviewPage() {
@@ -38,9 +39,10 @@ export default function OverviewPage() {
   if (!user.role) {
     return (
       <div className="min-h-[80vh] flex flex-col items-center justify-center p-6 text-center bg-[#F8FAFC]">
-        <div className="max-w-md space-y-4 bg-white p-8 rounded-3xl border border-slate-200 shadow-2xl shadow-slate-200/80">
-          <div className="w-12 h-12 rounded-2xl bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-600 mx-auto">
-            <LayoutDashboard className="w-6 h-6" />
+        <div className="max-w-md space-y-4 bg-white p-8 rounded-3xl border border-slate-200 shadow-2xl shadow-slate-200/80 flex flex-col items-center">
+          <Logo size="lg" href="/overview" showBadge badgeText="Overview" />
+          <div className="w-10 h-10 rounded-2xl bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-600 mt-2">
+            <LayoutDashboard className="w-5 h-5" />
           </div>
           <h2 className="text-xl font-extrabold text-slate-900">Authentication Required</h2>
           <p className="text-xs text-slate-600 font-medium">

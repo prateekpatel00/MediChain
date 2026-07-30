@@ -25,6 +25,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useWallet } from '../../context/WalletContext';
 import { useStellar } from '../../hooks/useStellar';
 import { REGISTRY_CONTRACT_ID } from '../../services/stellar';
+import { Logo } from '../../components/Logo';
 
 export default function GovtDashboard() {
   const { user } = useAuth();
@@ -75,9 +76,10 @@ export default function GovtDashboard() {
   if (user.role !== 'govt') {
     return (
       <div className="min-h-[80vh] flex flex-col items-center justify-center p-6 text-center bg-[#F8FAFC] md:ml-64">
-        <div className="max-w-md space-y-4 bg-white p-8 rounded-3xl border border-slate-200 shadow-2xl shadow-slate-200/80">
-          <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 mx-auto">
-            <ShieldAlert className="w-6 h-6" />
+        <div className="max-w-md space-y-4 bg-white p-8 rounded-3xl border border-slate-200 shadow-2xl shadow-slate-200/80 flex flex-col items-center">
+          <Logo size="lg" href="/govt" showBadge badgeText="Super Admin" />
+          <div className="w-10 h-10 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 mt-2">
+            <ShieldAlert className="w-5 h-5" />
           </div>
           <h2 className="text-xl font-extrabold text-slate-900">Government Admin Access Required</h2>
           <p className="text-xs text-slate-600 font-medium">
@@ -101,11 +103,17 @@ export default function GovtDashboard() {
       {/* SUB-HEADER */}
       <div className="bg-white border-b border-slate-200/80 shadow-sm px-4 sm:px-6 py-3.5">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2 text-slate-800 font-bold">
-            <Landmark className="w-4 h-4 text-teal-600" />
-            <span>Ministry of Health Authority Portal</span>
+          <div className="flex items-center gap-3">
+            <Logo size="sm" href="/govt" showBadge badgeText="Super Admin" />
             <span className="text-slate-300">•</span>
-            <span className="font-mono text-[11px] text-slate-500 font-normal">Registry Contract: {REGISTRY_CONTRACT_ID.slice(0, 14)}...</span>
+            <div className="flex items-center gap-1.5 text-slate-700 font-bold">
+              <Landmark className="w-3.5 h-3.5 text-teal-600" />
+              <span>Ministry of Health Authority Portal</span>
+            </div>
+            <span className="text-slate-300">•</span>
+            <span className="font-mono text-[11px] text-slate-500 font-normal hidden sm:inline">
+              Registry: {REGISTRY_CONTRACT_ID.slice(0, 14)}...
+            </span>
           </div>
 
           <div className="flex items-center gap-2 text-xs text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 font-bold">

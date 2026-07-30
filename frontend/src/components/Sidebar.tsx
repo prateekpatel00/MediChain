@@ -20,6 +20,7 @@ import {
   ChevronRight,
   LogOut,
 } from 'lucide-react';
+import { Logo } from './Logo';
 import { useAuth } from '../context/AuthContext';
 
 export function Sidebar() {
@@ -45,25 +46,15 @@ export function Sidebar() {
     <aside className="hidden md:flex flex-col w-64 bg-white border-r border-slate-200/80 shadow-sm fixed top-0 bottom-0 left-0 z-30 pt-4 px-4 pb-6 justify-between">
       
       <div className="space-y-6">
-        {/* Brand Logo & Name (Shielded Pulse Identity Vector) */}
-        <Link href="/overview" className="flex items-center gap-3 px-2 group">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 via-teal-500 to-cyan-600 p-0.5 shadow-lg shadow-teal-500/20 transition-transform group-hover:scale-105">
-            <div className="w-full h-full bg-white rounded-[14px] flex items-center justify-center p-1.5">
-              <svg viewBox="0 0 24 24" fill="none" className="w-full h-full text-teal-600" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                {/* Shield Outline */}
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                {/* Pulse Line */}
-                <path d="M8 12h2l1.5-3 2.5 6 1.5-3h2.5" className="text-emerald-500" stroke="currentColor" strokeWidth="2" />
-              </svg>
-            </div>
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <span className="font-extrabold text-lg tracking-tight text-slate-900">MediChain</span>
-            </div>
-            <p className="text-[10px] text-slate-500 font-medium">Health Data Protocol</p>
-          </div>
-        </Link>
+        {/* Brand Logo & Name (Official Enterprise MediChain Logo) */}
+        <div className="px-2">
+          <Logo
+            size="md"
+            href="/overview"
+            showSubtitle
+            subtitleText="Health Data Protocol"
+          />
+        </div>
 
         {/* Sidebar Menu Section */}
         <div className="space-y-1">

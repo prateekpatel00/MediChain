@@ -19,7 +19,7 @@
 
 use soroban_sdk::{
     contract, contracterror, contractimpl, contracttype,
-    symbol_short, Address, Env, panic_with_error,
+    symbol_short, Address, BytesN, Env, panic_with_error,
 };
 
 // ----------------------------------------------------------------
@@ -167,4 +167,34 @@ impl RegistryContract {
     pub fn get_admin(env: Env) -> Option<Address> {
         env.storage().instance().get(&DataKey::Admin)
     }
+
+    // ------------------------------------------------------------
+    // 6. CONTRACT UPGRADE (Super-Admin Only)
+    // ------------------------------------------------------------
+    /// Upgrades the contract WASM bytecode to a new compiled WASM hash.
+    /// Follows official Stellar Soroban upgrade patterns using `env.deployer()`.
+    ///
+    /// # Authorization
+    /// `admin.require_auth()` — Only super-admin can upgrade contract bytecode.
+    pub fn upgrade(env: Env, admin: Address, new_wasm_hash: BytesN<32>) {
+        admin.require_auth();
+
+        let stored_admin = env
+            .storage()
+            .instance()
+            .get::<DataKey, Address>(&DataKey::Admin)
+            .unwrap_or_else(|| panic_with_error!(&env, RegistryError::NotInitialized));
+
+        if stored_admin != admin {
+            panic_with_error!(&env, RegistryError::Unauthorized);
+        }
+
+        env.deployer().update_current_contract_wasm(new_wasm_hash);
+
+        env.events().publish(
+            (symbol_short!("upgraded"), admin),
+            symbol_short!("registry"),
+        );
+    }
 }
+

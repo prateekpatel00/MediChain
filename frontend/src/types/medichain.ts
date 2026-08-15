@@ -47,7 +47,7 @@ export interface TransactionItem {
   hash: string;
   method:
     | 'initialize'
-    | 'grant_hospital_rights'
+    | 'add_hospital'
     | 'remove_hospital'
     | 'upload_record'
     | 'request_access'

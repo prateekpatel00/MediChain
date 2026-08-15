@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  # ------------------------------------------------------------
+  # 1. Local Stellar Soroban Standalone Network Node (Quickstart)
+  # ------------------------------------------------------------
+  stellar-quickstart:
+    image: stellar/quickstart:testing
+    container_name: medichain-stellar-node
+    ports:
+      - "8000:8000"
+    command: --standalone --enable-soroban-rpc
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:8000/ | grep -q 'Soroban' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ------------------------------------------------------------
+  # 2. MediChain Next.js Web Frontend Application
+  # ------------------------------------------------------------
+  medichain-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: medichain-web-app
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_REGISTRY_CONTRACT_ID=CDD5BMSSEQSLBFQCZYYGFUNWJ5BH243YE7NHZSZJCZAICMRYXI7RCMJS
+      - NEXT_PUBLIC_CORE_CONTRACT_ID=CD4AOWVNSBCQPVMSNCSYKA5RI3Z24RH6UNXS3KTVQQW3ZDQJOJPFL4HB
+      - NEXT_PUBLIC_SOROBAN_RPC_URL=https://soroban-testnet.stellar.org
+      - NEXT_PUBLIC_NETWORK_PASSPHRASE=Test SDF Network ; September 2015
+    depends_on:
+      - stellar-quickstart

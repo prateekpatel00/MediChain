@@ -1,46 +1,51 @@
 # 🏥 MediChain — Decentralized Inter-Hospital Healthcare Data Protocol
 
 [![Stellar Soroban](https://img.shields.io/badge/Stellar-Soroban_v21-blue.svg?style=for-the-badge&logo=stellar)](https://stellar.org/soroban)
+[![Stellar Level 3 Certification](https://img.shields.io/badge/Stellar_Orange_Belt-Level_3_Passed-teal.svg?style=for-the-badge&logo=stellar)](https://developers.stellar.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-emerald.svg?style=for-the-badge)](LICENSE)
 [![CI/CD Pipeline](https://img.shields.io/badge/CI%2FCD-GitHub_Actions_Passing-success.svg?style=for-the-badge&logo=githubactions)](https://github.com/prateekpatel00/MediChain/actions)
 [![Next.js 14](https://img.shields.io/badge/Next.js-14_App_Router-black.svg?style=for-the-badge&logo=nextdotjs)](https://nextjs.org/)
-[![Vitest](https://img.shields.io/badge/Vitest-3%2F3_Passed-brightgreen.svg?style=for-the-badge&logo=vitest)](https://vitest.dev/)
+[![Vitest](https://img.shields.io/badge/Vitest-Passed-brightgreen.svg?style=for-the-badge&logo=vitest)](https://vitest.dev/)
+[![Docker](https://img.shields.io/badge/Docker-Containerized-blue.svg?style=for-the-badge&logo=docker)](https://www.docker.com/)
 
-> **MediChain** is an enterprise-grade, privacy-preserving inter-hospital medical record exchange protocol built on **Stellar Soroban smart contracts**. It eliminates healthcare data silos between medical institutions while maintaining 100% HIPAA compliance through on-chain cryptographic anchoring, dual-contract cross-invocation authorization, and zero on-chain Protected Health Information (PHI).
+> **MediChain** is a production-ready, privacy-preserving inter-hospital healthcare data exchange protocol built on **Stellar Soroban smart contracts**. It eliminates medical data silos while remaining 100% HIPAA and GDPR compliant through cryptographic anchoring, dual-contract cross-invocation authorization, real-time event streaming, and zero on-chain Protected Health Information (PHI).
 
 ---
 
 ## 🎯 The Problem & The Solution
 
 ### ❌ The Healthcare Data Silo Problem
-* **EMR Fragmentation**: Patient diagnostic records (MRI scans, bloodwork, cardiology reports) are locked inside isolated hospital EMR databases. When patients transfer between facilities, critical histories are delayed or duplicated.
-* **Privacy & Regulatory Risk**: Storing sensitive Protected Health Information (PHI) directly on public blockchains violates global privacy frameworks (HIPAA, GDPR) and incurs severe legal liabilities.
-* **Access Control Ambiguity**: Centralized record request portals lack immutable, tamper-proof access logs, exposing institutions to unauthorized data leaks and credential abuse.
+* **EMR Fragmentation**: Patient diagnostic records (MRI scans, lab reports, cardiology files) are locked inside isolated hospital EMR databases. When patients transfer between facilities, critical histories are delayed or duplicated.
+* **Privacy & Regulatory Liabilities**: Storing sensitive Protected Health Information (PHI) directly on public blockchains violates global privacy frameworks (HIPAA, GDPR) and incurs severe legal liabilities.
+* **Access Control Ambiguity**: Centralized record request portals lack immutable access logs, exposing institutions to unauthorized data leaks and credential abuse.
 
 ### ✅ The MediChain Solution
 * **Dual Soroban Smart Contract Architecture**:
-  1. **Registry Contract (`medichain-registry`)**: Governed strictly by the Ministry of Health / Government Super Admin (`GCVGEHLD34OAWVIQYWYNLEU2YFOXINO4FEXLGPV6DBHFIFDQFCWQJDI5`) to maintain an authorized whitelist of verified healthcare nodes.
+  1. **Registry Contract (`medichain-registry`)**: Governed strictly by the Ministry of Health / Government Super Admin (`GCVGEHLD34OAWVIQYWYNLEU2YFOXINO4FEXLGPV6DBHFIFDQFCWQJDI5`) to maintain an authorized whitelist of verified healthcare nodes. Supports contract WASM bytecode upgrades via `upgrade()`.
   2. **Core Logic Contract (`medichain-core`)**: Handles medical record metadata (IPFS CIDs) and inter-hospital access requests. Executes **atomic cross-contract calls** to the Registry Contract before performing any state modification.
 * **Zero PHI On-Chain**: Only 256-bit SHA-256 cryptographic hashes and IPFS Content Identifiers (CIDs) are anchored on the Soroban ledger. Actual medical documents remain encrypted off-chain on IPFS nodes.
 * **Unified Multi-Wallet Integration**: Built using `@creit.tech/stellar-wallets-kit`, enabling seamless authentication with Freighter, Albedo, xBull, Hana, and LOBSTR wallets.
+* **Real-Time Event Architecture**: Emits structured Soroban events (`upload`, `req_acc`, `appr_acc`, `hosp_add`, `upgraded`) and streams them live to the frontend activity feed via Soroban RPC `getEvents`.
 
 ---
 
-## 📑 Stellar Level 3 Requirements Checklist
+## 📑 Stellar Orange Belt (Level 3) Requirements Checklist
 
 | Requirement | Implementation Detail | Status |
 | :--- | :--- | :---: |
 | **Dual Inter-Contract Calls** | `CoreContract` invokes `RegistryClient::is_authorized()` via typed cross-contract XDR call before record uploads or access grants | `PASSED` ✅ |
-| **Strict Role-Based Access Control** | Super-Admin governance on `RegistryContract::add_hospital()` via `admin.require_auth()` and stored owner validation | `PASSED` ✅ |
-| **Custom Error Handling & Guards** | Strongly typed Rust `#[contracterror]` enums (`RegistryError`, `CoreError`) preventing invalid state transitions | `PASSED` ✅ |
-| **Automated E2E Integration Test** | Automated shell script (`scripts/test_e2e_flow.sh`) testing full multi-hospital data exchange on Stellar Testnet | `PASSED` ✅ |
-| **Unit & Integration Test Suite** | 7 Soroban SDK Rust unit tests + 3 Vitest frontend test suites covering components, contexts, and hooks | `PASSED` ✅ |
-| **CI/CD Pipeline Integration** | GitHub Actions workflow (`.github/workflows/deploy.yml`) testing, building, and deploying contracts on release | `PASSED` ✅ |
-| **Production Multi-Wallet Support** | Integrated StellarWalletsKit with official enterprise branding, responsive dark/light modes, and route guards | `PASSED` ✅ |
+| **Strict Role-Based Access Control** | Super-Admin governance on `RegistryContract::add_hospital()` and `upgrade()` via `admin.require_auth()` | `PASSED` ✅ |
+| **Real-Time Event Streaming** | Frontend `useContractEvents` hook subscribes to Soroban RPC `getEvents` streaming live updates to `/activity` feed | `PASSED` ✅ |
+| **Production Transaction Lifecycle** | `TransactionContext` tracks `Pending`, `Processing`, `Confirmed`, and `Failed` states with explorer links and retries | `PASSED` ✅ |
+| **Required 6 Application Pages** | Landing Page (`/`), Dashboard (`/overview`), Activity Feed (`/activity`), Transaction Center (`/transactions`), Settings (`/settings`), Analytics (`/analytics`) | `PASSED` ✅ |
+| **Automated E2E Integration Test** | `scripts/test_e2e_flow.sh` testing full multi-hospital data exchange and negative security checks on Testnet | `PASSED` ✅ |
+| **Rust Contract Upgrade Strategy** | `RegistryContract::upgrade()` and `CoreContract::upgrade()` implementation using `env.deployer().update_current_contract_wasm()` | `PASSED` ✅ |
+| **CI/CD Pipeline Integration** | `.github/workflows/pr.yml` and `deploy.yml` testing Rust contracts, Vitest suite, Next.js build, and typecheck | `PASSED` ✅ |
+| **Docker Containerization** | Multi-stage `Dockerfile` and `docker-compose.yml` orchestrating local Soroban Quickstart node + Next.js frontend | `PASSED` ✅ |
 
 ---
 
-## 🏗️ System Architecture & Cross-Contract Flow
+## 🏗️ System Architecture & Inter-Contract Flow
 
 ```mermaid
 sequenceDiagram
@@ -103,7 +108,7 @@ The smart contracts are live and verified on the **Stellar Testnet Network**:
 | **Core Logic Smart Contract** | `CD4AOWVNSBCQPVMSNCSYKA5RI3Z24RH6UNXS3KTVQQW3ZDQJOJPFL4HB` | [Stellar Expert Core](https://stellar.expert/explorer/testnet/contract/CD4AOWVNSBCQPVMSNCSYKA5RI3Z24RH6UNXS3KTVQQW3ZDQJOJPFL4HB) |
 | **Super Admin Owner Key** | `GCVGEHLD34OAWVIQYWYNLEU2YFOXINO4FEXLGPV6DBHFIFDQFCWQJDI5` | [Stellar Expert Account](https://stellar.expert/explorer/testnet/account/GCVGEHLD34OAWVIQYWYNLEU2YFOXINO4FEXLGPV6DBHFIFDQFCWQJDI5) |
 
-> 📌 **Deployment Placeholder Note for Custom Testnet**:
+> 📌 **Deployment Note**:
 > ```env
 > NEXT_PUBLIC_REGISTRY_CONTRACT_ID=CDD5BMSSEQSLBFQCZYYGFUNWJ5BH243YE7NHZSZJCZAICMRYXI7RCMJS
 > NEXT_PUBLIC_CORE_CONTRACT_ID=CD4AOWVNSBCQPVMSNCSYKA5RI3Z24RH6UNXS3KTVQQW3ZDQJOJPFL4HB
@@ -118,47 +123,52 @@ Ensure you have the following installed on your system:
 * [Rust](https://www.rust-lang.org/) `1.80+` with target `wasm32-unknown-unknown`
 * [Stellar CLI](https://developers.stellar.org/docs/build/smart-contracts/getting-started/setup#install-the-stellar-cli) (`v21.0.0+`)
 * [Node.js](https://nodejs.org/) `18+` & `npm`
+* Optional: [Docker](https://www.docker.com/) & Docker Compose
 
-### 2. Clone Repository & Build Smart Contracts
+### 2. Clone Repository & Run Rust Smart Contract Test Suite
 ```bash
-# Clone the repository
 git clone https://github.com/prateekpatel00/MediChain.git
 cd MediChain
 
-# Navigate to contracts directory and run Rust contract test suite
+# Run Rust contract tests (unit & cross-contract integration tests)
 cd contracts
 cargo test --workspace
 ```
 
-### 3. Automated End-to-End (E2E) Integration Testing
-Run the automated CLI integration test script to simulate full multi-hospital data exchange and negative RBAC security checks on Stellar Testnet:
+### 3. Frontend Vitest Tests
 ```bash
-# Run E2E test script via npm alias
 cd ../frontend
-npm run test:e2e
+npm install --legacy-peer-deps
+npm run test
+```
 
-# Or execute the bash script directly
+### 4. Automated End-to-End (E2E) Testnet Integration
+```bash
+# Run CLI testnet integration simulation
 bash ../scripts/test_e2e_flow.sh
 ```
 
-### 4. Deploy Smart Contracts & Start Frontend
+### 5. Smart Contract Upgrades Workflow
 ```bash
-# Deploy contracts to Stellar Testnet (updates frontend/.env.local automatically)
-cd ..
-bash deploy.sh
-
-# Run Next.js Web App
-cd frontend
-npm install
-npm run dev
+# Compile updated contract WASM and invoke upgrade() on Stellar Testnet
+bash ../scripts/upgrade_contract.sh testnet registry
 ```
-Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-### 5. Connecting Browser Wallet (Freighter)
-1. Install the [Freighter Wallet Browser Extension](https://www.freighter.app/).
-2. Open Freighter settings and switch Network to **Test Network**.
-3. Fund your test account via the [Stellar Testnet Laboratory Friendbot](https://laboratory.stellar.org/#account-creator).
-4. Click **"Connect Wallet"** on MediChain to interact with live Soroban smart contracts!
+---
+
+## 🐳 Docker Deployment Guide
+
+Run the full local environment (Stellar Soroban Standalone Node + Next.js App) with Docker Compose:
+
+```bash
+# Build and launch containers in background
+docker-compose up --build -d
+
+# Verify running containers
+docker-compose ps
+```
+* **MediChain Web App**: [http://localhost:3000](http://localhost:3000)
+* **Local Soroban RPC Node**: `http://localhost:8000`
 
 ---
 
@@ -167,13 +177,15 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ```
 MediChain Ecosystem
  ├── Soroban Smart Contracts (Rust)
- │    ├── medichain-registry (Hospital Whitelist & Admin RBAC)
+ │    ├── medichain-registry (Hospital Whitelist, Upgrade Strategy & Admin RBAC)
  │    └── medichain-core (Record Hashes & Access Permissions)
- ├── Frontend Interface (Next.js 14 App Router)
- │    ├── React 18, TypeScript 5, Tailwind CSS
- │    └── Unified Logo Design System (Shield, Pulse, Blockchain Cube)
- └── Blockchain & Wallet Integration
-      ├── @creit.tech/stellar-wallets-kit (Freighter, Albedo, xBull)
+ ├── Frontend Interface (Next.js 14/15 App Router)
+ │    ├── React 18/19, TypeScript 5, Tailwind CSS, Zustand, React Query
+ │    └── Logo Design System (Shield, Pulse, Blockchain Cube)
+ ├── Real-Time Event Architecture
+ │    └── Soroban RPC getEvents Polling & Event Subscription Hook
+ └── Blockchain & Wallet Infrastructure
+      ├── @creit.tech/stellar-wallets-kit (Freighter, Albedo, xBull, Hana, LOBSTR)
       └── Stellar Soroban RPC Testnet
 ```
 
@@ -183,3 +195,4 @@ MediChain Ecosystem
 
 * **Author**: Prateek Patel ([@prateekpatel00](https://github.com/prateekpatel00))
 * **License**: MIT License — see [LICENSE](LICENSE) for details.
+* **Certification**: Built for the **Stellar Level 3 Orange Belt Certification**.

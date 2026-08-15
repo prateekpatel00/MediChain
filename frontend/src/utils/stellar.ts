@@ -101,7 +101,7 @@ export async function connectFreighter(): Promise<WalletInfo> {
 export async function invokeSorobanContract(
   methodName:
     | 'initialize'
-    | 'grant_hospital_rights'
+    | 'add_hospital'
     | 'upload_record'
     | 'request_access'
     | 'approve_access'
@@ -216,11 +216,16 @@ export async function invokeSorobanContract(
 // ============================================================
 
 export function addressToScVal(address: string): xdr.ScVal {
-  return new Address(address).toScVal();
+  console.log('addressToScVal input:', address);
+  if (!address || typeof address !== 'string') {
+    throw new Error('Stellar address string is required.');
+  }
+  const cleanAddr = address.replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+  return Address.fromString(cleanAddr).toScVal();
 }
 
 export function stringToScVal(value: string): xdr.ScVal {
-  return nativeToScVal(value, { type: 'string' });
+  return nativeToScVal(String(value ?? ''), { type: 'string' });
 }
 
 function sleep(ms: number): Promise<void> {

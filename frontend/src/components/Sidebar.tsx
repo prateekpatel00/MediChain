@@ -19,6 +19,8 @@ import {
   Landmark,
   ChevronRight,
   LogOut,
+  Activity,
+  BarChart3,
 } from 'lucide-react';
 import { Logo } from './Logo';
 import { useAuth } from '../context/AuthContext';
@@ -37,7 +39,9 @@ export function Sidebar() {
     ...(user.role === 'hospital'
       ? [{ href: '/hospital', label: 'Hospital Operations', icon: Building2 }]
       : []),
+    { href: '/activity', label: 'Real-Time Activity', icon: Activity },
     { href: '/transactions', label: 'Transaction Center', icon: History },
+    { href: '/analytics', label: 'Network Analytics', icon: BarChart3 },
     { href: '/reports', label: 'Reports & Audit', icon: FileBarChart },
     { href: '/settings', label: 'Settings & Security', icon: Settings },
   ];

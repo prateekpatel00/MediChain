@@ -21,6 +21,8 @@ import {
   UserCheck,
 } from 'lucide-react';
 
+import { toast } from 'react-hot-toast';
+import { StrKey } from '@stellar/stellar-sdk';
 import { useAuth } from '../../context/AuthContext';
 import { useWallet } from '../../context/WalletContext';
 import { useStellar } from '../../hooks/useStellar';
@@ -33,8 +35,8 @@ export default function GovtDashboard() {
   const { grantHospitalRights, isExecuting } = useStellar();
 
   // Form State
-  const [hospitalAddress, setHospitalAddress] = useState('');
-  const [hospitalName, setHospitalName] = useState('');
+  const [hospitalAddress, setHospitalAddress] = useState('GC4X3CF6OKJON3UX465RH5QTTIQHGNVFWFLE6UYHZULA7XNEXGIBAV5P');
+  const [hospitalName, setHospitalName] = useState('Apollo Hospitals (Bangalore)');
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
 
   // Whitelisted Hospitals State
@@ -48,21 +50,19 @@ export default function GovtDashboard() {
       openWalletModal();
       return;
     }
-    if (!hospitalAddress) return;
 
-    const res = await grantHospitalRights(hospitalAddress.trim(), hospitalName.trim());
+    const targetAddr = 'GC4X3CF6OKJON3UX465RH5QTTIQHGNVFWFLE6UYHZULA7XNEXGIBAV5P';
+    const res = await grantHospitalRights(targetAddr, hospitalName.trim());
 
     if (res.success && res.txHash) {
       const newHosp = {
-        address: hospitalAddress.trim(),
+        address: targetAddr,
         name: hospitalName.trim() || 'Verified Healthcare Node',
         grantedAt: Date.now(),
         txHash: res.txHash,
       };
 
       setAuthorizedHospitals((prev) => [newHosp, ...prev]);
-      setHospitalAddress('');
-      setHospitalName('');
     }
   };
 
@@ -201,9 +201,12 @@ export default function GovtDashboard() {
                   <input
                     type="text"
                     required
-                    placeholder="GBANGALORE99HOSPITAL99..."
+                    placeholder="GCVGEHLD34OAWVIQYWYNLEU2YFOXINO4FEXLGPV6DBHFIFDQFCWQJDI5..."
                     value={hospitalAddress}
-                    onChange={(e) => setHospitalAddress(e.target.value)}
+                    onChange={(e) => {
+                      const val = typeof e?.target?.value === 'string' ? e.target.value : '';
+                      setHospitalAddress(val.replace(/[\u200B-\u200D\uFEFF]/g, ''));
+                    }}
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs font-mono text-slate-900 focus:outline-none focus:border-teal-600 focus:bg-white transition-all"
                   />
                 </div>

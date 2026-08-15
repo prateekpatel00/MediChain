@@ -15,6 +15,7 @@ import {
   xdr,
   SorobanRpc,
   scValToNative,
+  StrKey,
 } from '@stellar/stellar-sdk';
 
 // ============================================================
@@ -44,7 +45,7 @@ export interface SorobanCallResult {
 
 export type SorobanMethod =
   | 'initialize'
-  | 'grant_hospital_rights'
+  | 'add_hospital'
   | 'remove_hospital'
   | 'upload_record'
   | 'request_access'
@@ -59,6 +60,13 @@ export function formatHumanError(rawError: string): string {
   if (!rawError) return 'An unknown error occurred.';
   const lower = rawError.toLowerCase();
 
+  if (
+    lower.includes('bad union switch') ||
+    lower.includes('unsupported address type') ||
+    lower.includes('invalid xdr')
+  ) {
+    return 'Invalid Stellar Address or XDR argument format. Please ensure all addresses are valid 56-character public keys starting with G.';
+  }
   if (lower.includes('user declined') || lower.includes('rejected') || lower.includes('cancel')) {
     return 'Transaction rejected in wallet by user.';
   }
@@ -190,11 +198,24 @@ export async function invokeSorobanMethod(
 // ============================================================
 
 export function addressToScVal(address: string): xdr.ScVal {
-  return new Address(address).toScVal();
+  console.log('addressToScVal input:', address);
+  if (!address || typeof address !== 'string') {
+    throw new Error('Stellar address string is required.');
+  }
+  const cleanAddr = address.replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+  const isValidPublicKey = StrKey.isValidEd25519PublicKey(cleanAddr);
+  const isValidContractId = cleanAddr.startsWith('C') && cleanAddr.length === 56;
+
+  if (!isValidPublicKey && !isValidContractId) {
+    throw new Error(
+      `Invalid Stellar Address "${cleanAddr}". Expected a valid 56-character public key starting with 'G' or contract ID starting with 'C'.`
+    );
+  }
+  return Address.fromString(cleanAddr).toScVal();
 }
 
 export function stringToScVal(value: string): xdr.ScVal {
-  return nativeToScVal(value, { type: 'string' });
+  return nativeToScVal(String(value ?? ''), { type: 'string' });
 }
 
 function sleep(ms: number): Promise<void> {

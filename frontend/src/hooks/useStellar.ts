@@ -36,7 +36,7 @@ export function useStellar() {
       contractId: string,
       method:
         | 'initialize'
-        | 'grant_hospital_rights'
+        | 'add_hospital'
         | 'remove_hospital'
         | 'upload_record'
         | 'request_access'
@@ -112,15 +112,22 @@ export function useStellar() {
 
   // ── 1. REGISTRY CONTRACT: Grant Hospital Rights ────────────
   const grantHospitalRights = useCallback(
-    async (hospitalAddress: string, hospitalName?: string) => {
+    async (hospitalAddress?: string, hospitalName?: string) => {
       if (!wallet.address) return { success: false, error: 'Wallet not connected' };
+
+      const cleanAdminAddress = String(wallet.address).replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+      // Hardcoded target hospital address as explicitly requested by user
+      const targetHospital = 'GC4X3CF6OKJON3UX465RH5QTTIQHGNVFWFLE6UYHZULA7XNEXGIBAV5P';
+
+      console.log('HARDCODED Target Hospital Address:', targetHospital);
+      console.log('Sending Admin Address:', cleanAdminAddress);
 
       return executeOnChain(
         'Registry Contract',
         REGISTRY_CONTRACT_ID,
-        'grant_hospital_rights',
-        [addressToScVal(wallet.address), addressToScVal(hospitalAddress)],
-        `Authorize hospital ${hospitalName || hospitalAddress.slice(0, 10)}... on Registry Whitelist`
+        'add_hospital',
+        [addressToScVal(cleanAdminAddress), addressToScVal(targetHospital)],
+        `Authorize hospital ${hospitalName || targetHospital.slice(0, 10)}... on Registry Whitelist`
       );
     },
     [wallet.address, executeOnChain]

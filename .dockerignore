@@ -1,0 +1,10 @@
+node_modules
+.next
+.git
+.github
+target
+contracts/target
+frontend/node_modules
+frontend/.next
+npm-debug.log
+.env*.local

@@ -35,7 +35,7 @@
 
 use soroban_sdk::{
     contract, contracterror, contractimpl, contracttype,
-    symbol_short, Address, Env, String, panic_with_error,
+    symbol_short, Address, BytesN, Env, String, panic_with_error,
 };
 
 // ----------------------------------------------------------------
@@ -417,9 +417,29 @@ impl CoreContract {
     pub fn get_registry_id(env: Env) -> Option<Address> {
         env.storage().instance().get(&DataKey::RegistryId)
     }
+
+    // ------------------------------------------------------------
+    // CONTRACT UPGRADE (Admin Only)
+    // ------------------------------------------------------------
+    /// Upgrades the Core contract WASM bytecode.
+    /// Admin signature required.
+    pub fn upgrade(env: Env, admin: Address, new_wasm_hash: BytesN<32>) {
+        admin.require_auth();
+
+        // Verify caller is authorized admin via Registry cross-contract call
+        require_hospital_authorized(&env, &admin);
+
+        env.deployer().update_current_contract_wasm(new_wasm_hash);
+
+        env.events().publish(
+            (symbol_short!("upgraded"), admin),
+            symbol_short!("core"),
+        );
+    }
 }
 
 // ----------------------------------------------------------------
 // TESTS
 // ----------------------------------------------------------------
 mod test;
+

@@ -285,4 +285,40 @@ mod test {
         // MUST PANIC — NotInitialized
         core_client.upload_record(&hospital, &patient_id, &ipfs_hash);
     }
+
+    // ----------------------------------------------------------------
+    // TEST 8 — Revoke Granted Access (SUCCESS PATH)
+    // ----------------------------------------------------------------
+    /// Whitelist owner and requester → upload → request → approve → revoke.
+    /// After revoke_access, requester loses access to view record.
+    #[test]
+    fn test_08_revoke_access_succeeds() {
+        let env = Env::default();
+        env.mock_all_auths();
+
+        let (registry_client, core_client) = setup(&env);
+
+        let govt_admin = Address::generate(&env);
+        let hospital_a = Address::generate(&env); // owner
+        let hospital_b = Address::generate(&env); // requester
+
+        registry_client.initialize(&govt_admin);
+        registry_client.add_hospital(&govt_admin, &hospital_a);
+        registry_client.add_hospital(&govt_admin, &hospital_b);
+
+        let patient_id = String::from_str(&env, "PAT-REVOKE-008");
+        let ipfs_hash  = String::from_str(&env, "QmHashRevokeTest008");
+        let reason     = String::from_str(&env, "Consultation request");
+
+        core_client.upload_record(&hospital_a, &patient_id, &ipfs_hash);
+        core_client.request_access(&hospital_b, &hospital_a, &patient_id, &reason);
+        core_client.approve_access(&hospital_a, &hospital_b, &patient_id);
+
+        assert!(core_client.check_access(&hospital_b, &patient_id), "hospital_b should have access");
+
+        // Owning hospital revokes access
+        core_client.revoke_access(&hospital_a, &hospital_b, &patient_id);
+
+        assert!(!core_client.check_access(&hospital_b, &patient_id), "hospital_b access must be revoked");
+    }
 }

@@ -370,6 +370,56 @@ impl CoreContract {
     }
 
     // ------------------------------------------------------------
+    // 5b. REVOKE ACCESS
+    // ------------------------------------------------------------
+    /// The owning hospital explicitly revokes previously granted
+    /// access from a requesting hospital for a patient record.
+    ///
+    /// # Authorization
+    /// `target_hospital.require_auth()` — owner must sign.
+    pub fn revoke_access(
+        env: Env,
+        target_hospital: Address,
+        requester: Address,
+        patient_id: String,
+    ) {
+        target_hospital.require_auth();
+
+        // 1. Verify target_hospital actually owns the record
+        let record = env
+            .storage()
+            .persistent()
+            .get::<DataKey, RecordMeta>(&DataKey::Record(patient_id.clone()))
+            .unwrap_or_else(|| panic_with_error!(&env, CoreError::RecordNotFound));
+
+        if record.owning_hospital != target_hospital {
+            panic_with_error!(&env, CoreError::Unauthorized);
+        }
+
+        // 2. Update request status to Rejected if request exists
+        let req_key = DataKey::AccessReq(requester.clone(), patient_id.clone());
+        if let Some(mut req) = env
+            .storage()
+            .persistent()
+            .get::<DataKey, AccessRequest>(&req_key)
+        {
+            req.status     = AccessStatus::Rejected;
+            req.updated_at = env.ledger().timestamp();
+            env.storage().persistent().set(&req_key, &req);
+        }
+
+        // 3. Remove explicit access grant bit
+        env.storage()
+            .persistent()
+            .remove(&DataKey::AccessGrant(requester.clone(), patient_id.clone()));
+
+        env.events().publish(
+            (symbol_short!("rev_acc"), target_hospital),
+            (requester, patient_id),
+        );
+    }
+
+    // ------------------------------------------------------------
     // 6. VIEW RECORD  (read-only, access-controlled)
     // ------------------------------------------------------------
     /// Returns the IPFS hash for a patient record.

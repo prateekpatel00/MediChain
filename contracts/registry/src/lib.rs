@@ -49,6 +49,8 @@ pub enum DataKey {
     Admin,
     /// Stores the authorization flag for each hospital — persistent storage
     HospitalAuth(Address),
+    /// Stores the total count of registered active hospitals — instance storage
+    TotalHospitals,
 }
 
 // ----------------------------------------------------------------
@@ -106,10 +108,27 @@ impl RegistryContract {
             panic_with_error!(&env, RegistryError::Unauthorized);
         }
 
+        let is_already: bool = env
+            .storage()
+            .persistent()
+            .get::<DataKey, bool>(&DataKey::HospitalAuth(hospital.clone()))
+            .unwrap_or(false);
+
         // Persist the authorization flag in persistent storage
         env.storage()
             .persistent()
             .set(&DataKey::HospitalAuth(hospital.clone()), &true);
+
+        if !is_already {
+            let count: u32 = env
+                .storage()
+                .instance()
+                .get::<DataKey, u32>(&DataKey::TotalHospitals)
+                .unwrap_or(0);
+            env.storage()
+                .instance()
+                .set(&DataKey::TotalHospitals, &(count + 1));
+        }
 
         env.events().publish(
             (symbol_short!("hosp_add"), admin),
@@ -138,9 +157,28 @@ impl RegistryContract {
             panic_with_error!(&env, RegistryError::Unauthorized);
         }
 
+        let was_authorized: bool = env
+            .storage()
+            .persistent()
+            .get::<DataKey, bool>(&DataKey::HospitalAuth(hospital.clone()))
+            .unwrap_or(false);
+
         env.storage()
             .persistent()
             .remove(&DataKey::HospitalAuth(hospital.clone()));
+
+        if was_authorized {
+            let count: u32 = env
+                .storage()
+                .instance()
+                .get::<DataKey, u32>(&DataKey::TotalHospitals)
+                .unwrap_or(0);
+            if count > 0 {
+                env.storage()
+                    .instance()
+                    .set(&DataKey::TotalHospitals, &(count - 1));
+            }
+        }
 
         env.events().publish(
             (symbol_short!("hosp_rem"), admin),
@@ -161,11 +199,19 @@ impl RegistryContract {
     }
 
     // ------------------------------------------------------------
-    // 5. GET ADMIN (read-only helper)
+    // 5. GET ADMIN & HOSPITAL COUNT (read-only helpers)
     // ------------------------------------------------------------
     /// Returns the stored super-admin address.
     pub fn get_admin(env: Env) -> Option<Address> {
         env.storage().instance().get(&DataKey::Admin)
+    }
+
+    /// Returns total active registered hospitals count.
+    pub fn get_hospital_count(env: Env) -> u32 {
+        env.storage()
+            .instance()
+            .get::<DataKey, u32>(&DataKey::TotalHospitals)
+            .unwrap_or(0)
     }
 
     // ------------------------------------------------------------

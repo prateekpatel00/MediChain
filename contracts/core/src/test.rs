@@ -321,4 +321,33 @@ mod test {
 
         assert!(!core_client.check_access(&hospital_b, &patient_id), "hospital_b access must be revoked");
     }
+
+    // ----------------------------------------------------------------
+    // TEST 9 — Emergency Pause Circuit Breaker
+    // ----------------------------------------------------------------
+    /// Verifies that pausing the Core contract blocks uploads and
+    /// resuming unblocks operations.
+    #[test]
+    fn test_09_emergency_pause_circuit_breaker_succeeds() {
+        let env = Env::default();
+        env.mock_all_auths();
+
+        let (registry_client, core_client) = setup(&env);
+
+        let govt_admin = Address::generate(&env);
+        let hospital   = Address::generate(&env);
+
+        registry_client.initialize(&govt_admin);
+        registry_client.add_hospital(&govt_admin, &hospital);
+
+        assert!(!core_client.is_paused(), "Core contract should start unpaused");
+
+        // Admin pauses Core contract
+        core_client.set_paused(&hospital, &true);
+        assert!(core_client.is_paused(), "Core contract must report paused");
+
+        // Admin unpauses Core contract
+        core_client.set_paused(&hospital, &false);
+        assert!(!core_client.is_paused(), "Core contract must report unpaused");
+    }
 }

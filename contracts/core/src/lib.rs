@@ -79,6 +79,8 @@ pub enum CoreError {
     Unauthorized          = 5,
     /// The referenced access request does not exist
     RequestNotFound       = 6,
+    /// Contract is currently paused for emergency maintenance
+    ContractPaused        = 7,
 }
 
 // ----------------------------------------------------------------
@@ -132,6 +134,8 @@ pub enum DataKey {
     AccessReq(Address, String),
     /// Approved access grant bit keyed by (requester, patient_id)
     AccessGrant(Address, String),
+    /// Emergency circuit breaker pause status (instance storage)
+    Paused,
 }
 
 // ----------------------------------------------------------------
@@ -155,6 +159,18 @@ fn require_hospital_authorized(env: &Env, hospital: &Address) {
 
     if !is_auth {
         panic_with_error!(env, CoreError::HospitalNotAuthorized);
+    }
+}
+
+fn require_not_paused(env: &Env) {
+    let paused: bool = env
+        .storage()
+        .instance()
+        .get::<DataKey, bool>(&DataKey::Paused)
+        .unwrap_or(false);
+
+    if paused {
+        panic_with_error!(env, CoreError::ContractPaused);
     }
 }
 
@@ -212,7 +228,10 @@ impl CoreContract {
         // 1. Require wallet signature from the hospital
         hospital.require_auth();
 
-        // 2. CROSS-CONTRACT CALL: verify hospital is Registry-authorized
+        // 2. Circuit breaker check
+        require_not_paused(&env);
+
+        // 3. CROSS-CONTRACT CALL: verify hospital is Registry-authorized
         require_hospital_authorized(&env, &hospital);
 
         // 3. Build and persist the record
@@ -256,7 +275,10 @@ impl CoreContract {
         // 1. Require wallet signature
         requester.require_auth();
 
-        // 2. CROSS-CONTRACT CALL: verify requester is Registry-authorized
+        // 2. Circuit breaker check
+        require_not_paused(&env);
+
+        // 3. CROSS-CONTRACT CALL: verify requester is Registry-authorized
         require_hospital_authorized(&env, &requester);
 
         // 3. Persist the access request
@@ -466,6 +488,27 @@ impl CoreContract {
     /// Returns the stored Registry contract address.
     pub fn get_registry_id(env: Env) -> Option<Address> {
         env.storage().instance().get(&DataKey::RegistryId)
+    }
+
+    /// Sets emergency pause status for Core contract operations.
+    pub fn set_paused(env: Env, admin: Address, paused: bool) {
+        admin.require_auth();
+        require_hospital_authorized(&env, &admin);
+
+        env.storage().instance().set(&DataKey::Paused, &paused);
+
+        env.events().publish(
+            (symbol_short!("pause_st"), admin),
+            paused,
+        );
+    }
+
+    /// Returns `true` if Core contract is currently paused.
+    pub fn is_paused(env: Env) -> bool {
+        env.storage()
+            .instance()
+            .get::<DataKey, bool>(&DataKey::Paused)
+            .unwrap_or(false)
     }
 
     // ------------------------------------------------------------

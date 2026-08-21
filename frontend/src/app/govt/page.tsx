@@ -35,8 +35,8 @@ export default function GovtDashboard() {
   const { grantHospitalRights, isExecuting } = useStellar();
 
   // Form State
-  const [hospitalAddress, setHospitalAddress] = useState('GC4X3CF6OKJON3UX465RH5QTTIQHGNVFWFLE6UYHZULA7XNEXGIBAV5P');
-  const [hospitalName, setHospitalName] = useState('Apollo Hospitals (Bangalore)');
+  const [hospitalAddress, setHospitalAddress] = useState('');
+  const [hospitalName, setHospitalName] = useState('');
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
 
   // Whitelisted Hospitals State
@@ -51,12 +51,26 @@ export default function GovtDashboard() {
       return;
     }
 
-    const targetAddr = 'GC4X3CF6OKJON3UX465RH5QTTIQHGNVFWFLE6UYHZULA7XNEXGIBAV5P';
-    const res = await grantHospitalRights(targetAddr, hospitalName.trim());
+    // ── Client-side pre-flight validation ──────────────────────
+    const trimmedAddr = hospitalAddress.replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+
+    if (!trimmedAddr) {
+      toast.error('Hospital address is required.');
+      return;
+    }
+
+    if (!StrKey.isValidEd25519PublicKey(trimmedAddr)) {
+      toast.error(
+        `Invalid Stellar Address. Expected a valid 56-character public key starting with \'G\'.\n\nReceived: "${trimmedAddr.slice(0, 16)}..."`
+      );
+      return;
+    }
+
+    const res = await grantHospitalRights(trimmedAddr, hospitalName.trim());
 
     if (res.success && res.txHash) {
       const newHosp = {
-        address: targetAddr,
+        address: trimmedAddr,
         name: hospitalName.trim() || 'Verified Healthcare Node',
         grantedAt: Date.now(),
         txHash: res.txHash,

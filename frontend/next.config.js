@@ -1,22 +1,23 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {
-  webpack: (config, { isServer, webpack }) => {
-    if (!isServer) {
-      // sodium-native and require-addon are Node.js native modules used by
-      // @stellar/stellar-base for signing on the server side.
-      // In the browser, Freighter extension handles ALL transaction signing,
-      // so we can safely stub these out with empty modules.
-      config.plugins.push(
-        new webpack.NormalModuleReplacementPlugin(
-          /^sodium-native$/,
-          require.resolve('./src/utils/emptyModule.js')
-        ),
-        new webpack.NormalModuleReplacementPlugin(
-          /^require-addon$/,
-          require.resolve('./src/utils/emptyModule.js')
-        )
-      );
+const path = require('path');
 
+const nextConfig = {
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      // ── Fix: use resolve.alias instead of NormalModuleReplacementPlugin ──
+      // NormalModuleReplacementPlugin was producing "sodium-native/index.js.js"
+      // (double .js extension) which caused a Critical dependency webpack crash.
+      // resolve.alias intercepts at module-graph resolution time — no path
+      // mangling, no dynamic require analysis issues.
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        'sodium-native': path.resolve(__dirname, './src/utils/emptyModule.js'),
+        'require-addon': path.resolve(__dirname, './src/utils/emptyModule.js'),
+      };
+
+      // Stub out Node.js built-ins that have no browser equivalent.
+      // @stellar/stellar-sdk uses these on the server side only; Freighter
+      // handles all signing in the browser.
       config.resolve.fallback = {
         ...config.resolve.fallback,
         fs: false,

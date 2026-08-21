@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { SorobanRpc } from '@stellar/stellar-sdk';
+import { rpc } from '@stellar/stellar-sdk';
 import { useMediChainStore, ActivityEvent } from '../store/useMediChainStore';
 import { logger } from '../utils/logger';
 
@@ -15,7 +15,7 @@ export function useContractEvents() {
   useEffect(() => {
     if (!isLiveStreaming) return;
 
-    const server = new SorobanRpc.Server(RPC_URL);
+    const server = new rpc.Server(RPC_URL);
     let isCancelled = false;
 
     const fetchEvents = async () => {
@@ -33,7 +33,7 @@ export function useContractEvents() {
 
         if (isCancelled || !response.events) return;
 
-        response.events.forEach((evt: SorobanRpc.Api.EventResponse, idx: number) => {
+        response.events.forEach((evt: rpc.Api.EventResponse, idx: number) => {
           const topicStr = evt.topic ? evt.topic.map((t: unknown) => String(t)).join('::') : 'event';
           const contractIdStr = evt.contractId ? evt.contractId.toString() : CORE_CONTRACT_ID;
           const isCore = contractIdStr === CORE_CONTRACT_ID;

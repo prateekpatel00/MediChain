@@ -12,6 +12,12 @@
 
 ---
 
+### ⚖️ For Judges / Evaluators
+To test the Admin capabilities (like whitelisting a hospital), please import this 12-word recovery phrase into a test Freighter wallet:
+> `animal ivory million exhibit exhaust rug minimum resource paddle myth venture state`
+
+---
+
 ## 🎯 The Problem & The Solution
 
 ### ❌ The Healthcare Data Silo Problem

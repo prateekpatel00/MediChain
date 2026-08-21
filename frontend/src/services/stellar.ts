@@ -13,7 +13,7 @@ import {
   nativeToScVal,
   Address,
   xdr,
-  SorobanRpc,
+  rpc,
   scValToNative,
   StrKey,
 } from '@stellar/stellar-sdk';
@@ -27,14 +27,17 @@ export const STELLAR_TESTNET_RPC =
 export const STELLAR_PASSPHRASE =
   process.env.NEXT_PUBLIC_NETWORK_PASSPHRASE || Networks.TESTNET;
 
+// ── Deployed Testnet Contract IDs ────────────────────────────────
+// Fallbacks use the live Testnet addresses so the app works even
+// when NEXT_PUBLIC_* env vars are not loaded (e.g. in Storybook or
+// test environments that skip .env.local).
 export const REGISTRY_CONTRACT_ID =
   process.env.NEXT_PUBLIC_REGISTRY_CONTRACT_ID ||
-  'REPLACE_WITH_REGISTRY_CONTRACT_ID';
+  'CDD5BMSSEQSLBFQCZYYGFUNWJ5BH243YE7NHZSZJCZAICMRYXI7RCMJS';
 
 export const CORE_CONTRACT_ID =
   process.env.NEXT_PUBLIC_CORE_CONTRACT_ID ||
-  process.env.NEXT_PUBLIC_CONTRACT_ID ||
-  'CAMBP7LO53Z3CYLFXEY4LTL6EWFG2FOC5ZPP7QO35JPMIMRVFBXAZOOF';
+  'CD4AOWVNSBCQPVMSNCSYKA5RI3Z24RH6UNXS3KTVQQW3ZDQJOJPFL4HB';
 
 export interface SorobanCallResult {
   success: boolean;
@@ -102,7 +105,7 @@ export async function invokeSorobanMethod(
   callerPublicKey: string,
   signTransactionFn: (txXdr: string) => Promise<{ signedTxXdr: string }>
 ): Promise<SorobanCallResult> {
-  const server = new SorobanRpc.Server(STELLAR_TESTNET_RPC, { allowHttp: false });
+  const server = new rpc.Server(STELLAR_TESTNET_RPC, { allowHttp: false });
   const contract = new Contract(targetContractId);
 
   try {
@@ -120,12 +123,12 @@ export async function invokeSorobanMethod(
 
     // 3. Simulate transaction to obtain footprint & fees
     const simResult = await server.simulateTransaction(tx);
-    if (SorobanRpc.Api.isSimulationError(simResult)) {
+    if (rpc.Api.isSimulationError(simResult)) {
       throw new Error(formatHumanError(`Simulation error: ${simResult.error}`));
     }
 
     // 4. Assemble transaction with simulation footprint
-    const preparedTx = SorobanRpc.assembleTransaction(tx, simResult).build();
+    const preparedTx = rpc.assembleTransaction(tx, simResult).build();
 
     // 5. Convert to XDR and sign via StellarWalletsKit / Wallet Context
     const txXDR = preparedTx.toXDR();
@@ -153,7 +156,7 @@ export async function invokeSorobanMethod(
     const MAX_ATTEMPTS = 30;
 
     while (
-      getResult.status === SorobanRpc.Api.GetTransactionStatus.NOT_FOUND &&
+      getResult.status === rpc.Api.GetTransactionStatus.NOT_FOUND &&
       attempts < MAX_ATTEMPTS
     ) {
       await sleep(2000);
@@ -161,17 +164,17 @@ export async function invokeSorobanMethod(
       attempts++;
     }
 
-    if (getResult.status === SorobanRpc.Api.GetTransactionStatus.NOT_FOUND) {
+    if (getResult.status === rpc.Api.GetTransactionStatus.NOT_FOUND) {
       throw new Error('Transaction pending: timeout waiting for confirmation.');
     }
 
-    if (getResult.status === SorobanRpc.Api.GetTransactionStatus.FAILED) {
+    if (getResult.status === rpc.Api.GetTransactionStatus.FAILED) {
       throw new Error(`Transaction failed on-chain. TxHash: ${txHash}`);
     }
 
     let returnValue: string | undefined;
     if (
-      getResult.status === SorobanRpc.Api.GetTransactionStatus.SUCCESS &&
+      getResult.status === rpc.Api.GetTransactionStatus.SUCCESS &&
       getResult.returnValue
     ) {
       try {
@@ -197,20 +200,60 @@ export async function invokeSorobanMethod(
 // ScVal CONVERTERS
 // ============================================================
 
+// ============================================================
+// addressToScVal — Hardened address converter
+// ============================================================
+// Strips zero-width Unicode characters (\u200B-\u200D, \uFEFF)
+// that clipboard-pasting can silently introduce, then validates
+// the resulting string before handing it to the Stellar SDK.
+// Provides actionable error messages that name the exact problem.
+// ============================================================
 export function addressToScVal(address: string): xdr.ScVal {
-  console.log('addressToScVal input:', address);
   if (!address || typeof address !== 'string') {
-    throw new Error('Stellar address string is required.');
-  }
-  const cleanAddr = address.replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
-  const isValidPublicKey = StrKey.isValidEd25519PublicKey(cleanAddr);
-  const isValidContractId = cleanAddr.startsWith('C') && cleanAddr.length === 56;
-
-  if (!isValidPublicKey && !isValidContractId) {
     throw new Error(
-      `Invalid Stellar Address "${cleanAddr}". Expected a valid 56-character public key starting with 'G' or contract ID starting with 'C'.`
+      'addressToScVal: a non-empty Stellar address string is required.'
     );
   }
+
+  // 1. Strip invisible Unicode characters that can come from copy-paste
+  const cleanAddr = address
+    .replace(/[\u200B-\u200D\uFEFF\u00A0]/g, '') // zero-width + non-breaking space
+    .trim();
+
+  if (!cleanAddr) {
+    throw new Error(
+      'addressToScVal: address is empty after stripping whitespace and invisible characters.'
+    );
+  }
+
+  // 2. Validate: accept Stellar account keys (G...) or contract IDs (C...)
+  const isValidPublicKey = StrKey.isValidEd25519PublicKey(cleanAddr);
+
+  // StrKey.isValidContract exists at runtime but is not in the v11 type
+  // declarations, so we perform the equivalent check manually.
+  let isValidContractId = false;
+  if (cleanAddr.startsWith('C') && cleanAddr.length === 56) {
+    try {
+      StrKey.decodeContract(cleanAddr);
+      isValidContractId = true;
+    } catch {
+      isValidContractId = false;
+    }
+  }
+
+  if (!isValidPublicKey && !isValidContractId) {
+    const hint =
+      cleanAddr.length !== 56
+        ? `length is ${cleanAddr.length} (expected 56)`
+        : `first character is '${cleanAddr[0]}' (expected 'G' for accounts or 'C' for contracts)`;
+
+    throw new Error(
+      `Invalid Stellar Address — ${hint}.\n` +
+      `Received: "${cleanAddr}"\n` +
+      `Expected: a valid Ed25519 public key (G...) or Soroban contract ID (C...).`
+    );
+  }
+
   return Address.fromString(cleanAddr).toScVal();
 }
 

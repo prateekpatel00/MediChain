@@ -1,0 +1,198 @@
+# 🏥 MediChain — Stellar Orange Belt (Level 3) Diagnostic Audit & Action Plan
+
+**Date**: August 21, 2026  
+**Workspace**: `prateekpatel00/MediChain` (`c:\Users\PRATEEK\OneDrive\Desktop\medical app`)  
+**Target Standard**: Stellar Orange Belt (Level 3 Certification)
+
+---
+
+## 📊 1. Current Status vs. Level 3 Master Prompt Requirements
+
+Below is the comprehensive audit of the workspace evaluated against the mandatory **Stellar Level 3 Orange Belt** criteria.
+
+| Requirement Area | Specification / Expectation | Implementation Detail | Current Status |
+| :--- | :--- | :--- | :---: |
+| **Dual Inter-Contract Calls** | Atomic cross-contract invocation from Core logic contract to Registry contract (`is_authorized`) | **Rust Side**: Fully implemented in `contracts/core/src/lib.rs` using typed `RegistryClient`. Tested via 9 passing Rust contract unit/integration tests.<br>**Frontend Side**: Broken due to hardcoded target address in `useStellar.ts` and `govt/page.tsx`. | `PARTIALLY BUILT` 🟡 |
+| **Strict Role-Based Access Control (RBAC)** | Admin-only functions guarded by `admin.require_auth()` and caller address verification | **Rust Side**: Strictly enforced in `contracts/registry/src/lib.rs` and `contracts/core/src/lib.rs`.<br>**Frontend Side**: Frontend UI lacks pre-flight `is_authorized()` check before triggering transactions, causing cryptic on-chain reverts. | `PARTIALLY BUILT` 🟡 |
+| **Real-Time Event Architecture** | Subscribe to Soroban RPC `getEvents` to render live ledger activities | **Hook**: `useContractEvents.ts` polls Soroban RPC every 12s.<br>**Flaw**: Hardcodes `startLedger: 0` which causes RPC query failures on public Testnet. String topic matching is unparsed. | `PARTIALLY BUILT` 🟡 |
+| **6 Mandatory Frontend Pages** | Landing (`/`), Overview (`/overview`), Activity (`/activity`), Transactions (`/transactions`), Settings (`/settings`), Analytics (`/analytics`) | All 6 pages + `/govt`, `/hospital`, `/login` portals are built using Next.js 14 App Router, Tailwind CSS, Lucide icons, and custom SVG logos. | `FULLY BUILT` 🟢 |
+| **Production Transaction Lifecycle** | Track Pending ➔ Processing ➔ Confirmed / Failed with Stellar Expert explorer links | Implemented via `TransactionContext.tsx` with `localStorage` persistence and live toasts. | `FULLY BUILT` 🟢 |
+| **Contract WASM Upgrade Strategy** | Governance upgrade mechanism using `env.deployer().update_current_contract_wasm()` | Implemented in `RegistryContract::upgrade()` and `CoreContract::upgrade()`. Shell script `scripts/upgrade_contract.sh` present. | `FULLY BUILT` 🟢 |
+| **CI/CD Pipeline** | GitHub Actions validating Rust compilation, tests, Next.js linting, typechecking, and production build | `.github/workflows/pr.yml` and `.github/workflows/deploy.yml` present and configured for Node 20 + Rust stable. | `FULLY BUILT` 🟢 |
+| **Automated Tests** | Contract unit/integration tests + Frontend Vitest test suite | **Cargo**: 9 tests passed.<br>**Vitest**: Setup exists in `frontend/src/__tests__`. | `FULLY BUILT` 🟢 |
+| **Docker Containerization** | Dockerfile & docker-compose orchestrating Standalone Soroban Quickstart node + Next.js frontend | Multi-stage `Dockerfile` and `docker-compose.yml` configured. | `FULLY BUILT` 🟢 |
+
+---
+
+## 🔍 2. Error Log & Critical Bug Analysis
+
+> [!IMPORTANT]
+> **Root Cause Identified**: The reason Freighter wallet addresses are throwing validation errors and failing contract execution is **NOT** a bug in Soroban SDK or Freighter extension itself. It is caused by **hardcoded wallet override strings in `useStellar.ts` and `govt/page.tsx`**, combined with **un-funded Testnet accounts** and **duplicate file logic**.
+
+### 🐞 Bug 1: Hardcoded Hospital Address Override in Frontend Hooks & Forms
+* **Files**: [useStellar.ts](file:///c:/Users/PRATEEK/OneDrive/Desktop/medical%20app/frontend/src/hooks/useStellar.ts#L119-L130), [govt/page.tsx](file:///c:/Users/PRATEEK/OneDrive/Desktop/medical%20app/frontend/src/app/govt/page.tsx#L38-L55)
+* **Root Cause**:
+  1. In `useStellar.ts`:
+     ```typescript
+     // Hardcoded target hospital address as explicitly requested by user
+     const targetHospital = 'GC4X3CF6OKJON3UX465RH5QTTIQHGNVFWFLE6UYHZULA7XNEXGIBAV5P';
+     ```
+     `grantHospitalRights` completely ignores the `hospitalAddress` argument passed to it and attempts to register `GC4X3CF6...` on the Registry contract.
+  2. In `govt/page.tsx`:
+     ```typescript
+     const targetAddr = 'GC4X3CF6OKJON3UX465RH5QTTIQHGNVFWFLE6UYHZULA7XNEXGIBAV5P';
+     const res = await grantHospitalRights(targetAddr, hospitalName.trim());
+     ```
+     The form handler hardcodes `targetAddr` instead of taking the user's input `hospitalAddress`.
+* **Impact**: When the Super Admin attempts to whitelist their connected Freighter wallet or a new hospital address, `GC4X3CF6...` is submitted to the ledger instead. Consequently, when the actual connected wallet calls `upload_record` or `request_access`, the Registry cross-contract check (`is_authorized(hospital)`) returns `false`, reverting the transaction with `CoreError::HospitalNotAuthorized` (Error Code 3).
+
+---
+
+### 🐞 Bug 2: Duplicate Stellar Service Modules (`services/stellar.ts` vs `utils/stellar.ts`)
+* **Files**: [services/stellar.ts](file:///c:/Users/PRATEEK/OneDrive/Desktop/medical%20app/frontend/src/services/stellar.ts), [utils/stellar.ts](file:///c:/Users/PRATEEK/OneDrive/Desktop/medical%20app/frontend/src/utils/stellar.ts)
+* **Root Cause**: Two separate implementations of Soroban transaction submission, `addressToScVal`, and wallet connection logic exist.
+  - `services/stellar.ts` reads `NEXT_PUBLIC_REGISTRY_CONTRACT_ID` with fallback `'REPLACE_WITH_REGISTRY_CONTRACT_ID'`.
+  - `utils/stellar.ts` reads `NEXT_PUBLIC_CONTRACT_ID` with fallback `'CAMBP7LO53Z3CYLFXEY4LTL6EWFG2FOC5ZPP7QO35JPMIMRVFBXAZOOF'`.
+* **Impact**: If `.env.local` is missing or not loaded, `REGISTRY_CONTRACT_ID` defaults to an invalid string `'REPLACE_WITH_REGISTRY_CONTRACT_ID'`, triggering `Invalid Stellar Address` or `bad union switch` errors when converting strings to XDR `ScVal`.
+
+---
+
+### 🐞 Bug 3: Account Sequence 404 Error for Unfunded Testnet Wallets
+* **File**: [services/stellar.ts](file:///c:/Users/PRATEEK/OneDrive/Desktop/medical%20app/frontend/src/services/stellar.ts#L109-L110)
+* **Root Cause**:
+  ```typescript
+  const account = await server.getAccount(callerPublicKey);
+  ```
+  When a user connects a freshly generated Freighter wallet that has 0 XLM on Stellar Testnet, `server.getAccount(callerPublicKey)` throws an uncaught HTTP 404 (`Account not found`) error before transaction simulation can start.
+* **Impact**: The app throws an opaque error toast instead of informing the user to fund their account via Friendbot.
+
+---
+
+### 🐞 Bug 4: Event Streaming `startLedger: 0` RPC Failure
+* **File**: [useContractEvents.ts](file:///c:/Users/PRATEEK/OneDrive/Desktop/medical%20app/frontend/src/hooks/useContractEvents.ts#L23-L32)
+* **Root Cause**:
+  ```typescript
+  const response = await server.getEvents({
+    startLedger: 0,
+    filters: [{ type: 'contract', contractIds: [CORE_CONTRACT_ID, REGISTRY_CONTRACT_ID] }],
+    limit: 10,
+  });
+  ```
+  Soroban RPC nodes reject or timeout queries requesting events starting from ledger `0` when the current Testnet ledger count is in the tens of millions.
+* **Impact**: Event polling silently catches an error every 12 seconds and logs fallback warnings, preventing live event streaming on `/activity`.
+
+---
+
+### 🐞 Bug 5: In-Memory React State Reset & Un-synchronized Wallet Auth
+* **Files**: [govt/page.tsx](file:///c:/Users/PRATEEK/OneDrive/Desktop/medical%20app/frontend/src/app/govt/page.tsx#L43-L45), [hospital/page.tsx](file:///c:/Users/PRATEEK/OneDrive/Desktop/medical%20app/frontend/src/app/hospital/page.tsx#L81-L85)
+* **Root Cause**: Whitelisted hospital nodes, patient records, and access requests are kept in temporary React `useState` arrays. Upon page refresh, all state vanishes.
+* **Impact**: The user experience feels fragmented because previously uploaded records and granted permissions disappear from the UI tables even though they exist on the Soroban ledger.
+
+---
+
+## 🗓️ 3. 10-Day Action Plan
+
+> [!NOTE]
+> This strict, step-by-step checklist is divided into two phases. **Phase 1** focuses on fixing existing bugs so the application runs flawlessly. **Phase 2** completes missing Level 3 production features.
+
+```mermaid
+gantt
+    title MediChain 10-Day Remediation & Level 3 Production Plan
+    dateFormat  YYYY-MM-DD
+    section Phase 1: Fix & Stabilize
+    Day 1 - Wallet & ScVal Fixes      :d1, 2026-08-22, 1d
+    Day 2 - Service Consolidation    :d2, 2026-08-23, 1d
+    Day 3 - Friendbot Auto-Funding   :d3, 2026-08-24, 1d
+    Day 4 - RPC Event Stream Repair  :d4, 2026-08-25, 1d
+    section Phase 2: Level 3 Polish
+    Day 5 - Pre-flight RBAC Check    :d5, 2026-08-26, 1d
+    Day 6 - Persistent Store Layer   :d6, 2026-08-27, 1d
+    Day 7 - Contract Upgrades Test   :d7, 2026-08-28, 1d
+    Day 8 - E2E Integration Suite   :d8, 2026-08-29, 1d
+    Day 9 - Docker & CI/CD Audit     :d9, 2026-08-30, 1d
+    Day 10 - Final Demo & Review     :d10, 2026-08-31, 1d
+```
+
+### 🔴 Phase 1: Bug Fixes & System Stabilization (Days 1–4)
+
+#### Day 1: Fix Wallet Address Parameters & Remove Hardcoded Strings
+- [ ] In `frontend/src/hooks/useStellar.ts`:
+  - Update `grantHospitalRights` signature to accept `hospitalAddress: string` and pass `addressToScVal(hospitalAddress)` dynamically.
+  - Remove hardcoded `'GC4X3CF6OKJON3UX465RH5QTTIQHGNVFWFLE6UYHZULA7XNEXGIBAV5P'` fallback.
+- [ ] In `frontend/src/app/govt/page.tsx`:
+  - Update `handleGrantRights` to use the controlled `hospitalAddress` input state.
+  - Add client-side validation using `StrKey.isValidEd25519PublicKey(hospitalAddress)` before triggering transaction.
+
+#### Day 2: Consolidate Dual Stellar Services
+- [ ] Deprecate `frontend/src/utils/stellar.ts` in favor of single source of truth in `frontend/src/services/stellar.ts`.
+- [ ] Standardize contract ID constants across `.env.local` and `services/stellar.ts`:
+  - `NEXT_PUBLIC_REGISTRY_CONTRACT_ID` default: `CDD5BMSSEQSLBFQCZYYGFUNWJ5BH243YE7NHZSZJCZAICMRYXI7RCMJS`
+  - `NEXT_PUBLIC_CORE_CONTRACT_ID` default: `CD4AOWVNSBCQPVMSNCSYKA5RI3Z24RH6UNXS3KTVQQW3ZDQJOJPFL4HB`
+- [ ] Enhance `addressToScVal` error handling to cleanly strip zero-width characters (`\u200B-\u200D\uFEFF`) and provide descriptive validation messages.
+
+#### Day 3: Implement Automatic Friendbot Testnet Funding Check
+- [ ] In `services/stellar.ts`:
+  - Wrap `server.getAccount(callerPublicKey)` in a helper function.
+  - If `getAccount` returns 404, automatically trigger Stellar Testnet Friendbot (`https://friendbot.stellar.org?addr=${callerPublicKey}`) and notify user via toast: *"Funding account with 10,000 Testnet XLM..."*.
+
+#### Day 4: Repair Real-Time Soroban RPC Event Streaming
+- [ ] In `frontend/src/hooks/useContractEvents.ts`:
+  - Remove `startLedger: 0`. Dynamically fetch current ledger height via `server.getLatestLedger()` and set `startLedger: latestLedger - 500`.
+  - Parse Soroban XDR topics (`evt.topic`) to extract raw symbols (`upload`, `req_acc`, `appr_acc`, `hosp_add`) accurately.
+
+---
+
+### 🔵 Phase 2: Level 3 Feature Polish & Production Readiness (Days 5–10)
+
+#### Day 5: Pre-Flight RBAC Verification & UI State Syncing
+- [ ] Implement `isHospitalAuthorized(address: string)` query in `useStellar.ts` using Soroban RPC simulation.
+- [ ] On `/hospital` and `/govt` pages, run pre-flight check when wallet connects:
+  - Display a badge: `Whitelisted Node` 🟢 vs `Pending Whitelisting` 🔴.
+  - Disable record upload button with helpful tooltip if node is not whitelisted.
+
+#### Day 6: Persistent Global Store for On-Chain Activity & Records
+- [ ] Extend `useMediChainStore` (Zustand) with `localStorage` persistence for uploaded record metadata, access requests, and whitelisted hospital lists.
+- [ ] Sync store state with ledger events received from `useContractEvents`.
+
+#### Day 7: Verify Contract WASM Upgrade Workflow
+- [ ] Execute testnet upgrade run using `scripts/upgrade_contract.sh`.
+- [ ] Verify `RegistryContract::upgrade()` and `CoreContract::upgrade()` events (`upgraded`) emit properly on Stellar Expert explorer.
+
+#### Day 8: Refine End-to-End (E2E) CLI Test Script
+- [ ] Test `scripts/test_e2e_flow.sh` against live Testnet contracts.
+- [ ] Verify multi-hospital scenario: Hospital A uploads record -> Hospital B requests access -> Hospital A approves access -> Hospital B views record.
+
+#### Day 9: Production CI/CD & Docker Audit
+- [ ] Verify Docker container startup with `docker-compose up --build`.
+- [ ] Run full GitHub Actions simulation locally using `npx tsc --noEmit` and `npm run test`.
+
+#### Day 10: Final Audit Sign-Off & Demonstration Preparation
+- [ ] Run all 6 pages through responsive layout checks and verify dark/light UI aesthetics.
+- [ ] Prepare final Level 3 certification summary document.
+
+---
+
+## 🎯 Verification Plan
+
+### Automated Tests
+1. **Rust Contract Suite**:
+   ```bash
+   cd contracts
+   cargo test --workspace
+   ```
+2. **Frontend Vitest Suite**:
+   ```bash
+   cd frontend
+   npm run test
+   ```
+3. **TypeScript & Linter Check**:
+   ```bash
+   cd frontend
+   npx tsc --noEmit
+   npm run lint
+   ```
+
+### Manual Verification
+1. Connect Freighter Wallet on `/govt` page. Submit a valid Stellar public key (e.g. `GC4X...`) in the Whitelist form. Confirm transaction approves and address is registered on-chain.
+2. Switch to `/hospital` page with the newly whitelisted address. Upload a test record. Verify cross-contract authorization succeeds without `HospitalNotAuthorized` revert.
+3. Observe live event badge appearing in `/activity` feed within 12 seconds of ledger confirmation.

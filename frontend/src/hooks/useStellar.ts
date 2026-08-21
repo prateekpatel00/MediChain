@@ -112,22 +112,23 @@ export function useStellar() {
 
   // ── 1. REGISTRY CONTRACT: Grant Hospital Rights ────────────
   const grantHospitalRights = useCallback(
-    async (hospitalAddress?: string, hospitalName?: string) => {
+    async (hospitalAddress: string, hospitalName?: string) => {
       if (!wallet.address) return { success: false, error: 'Wallet not connected' };
 
       const cleanAdminAddress = String(wallet.address).replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
-      // Hardcoded target hospital address as explicitly requested by user
-      const targetHospital = 'GC4X3CF6OKJON3UX465RH5QTTIQHGNVFWFLE6UYHZULA7XNEXGIBAV5P';
 
-      console.log('HARDCODED Target Hospital Address:', targetHospital);
-      console.log('Sending Admin Address:', cleanAdminAddress);
+      // Strip invisible characters from the hospital address supplied by caller
+      const cleanHospitalAddress = String(hospitalAddress).replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+
+      console.log('Admin Address:', cleanAdminAddress);
+      console.log('Target Hospital Address:', cleanHospitalAddress);
 
       return executeOnChain(
         'Registry Contract',
         REGISTRY_CONTRACT_ID,
         'add_hospital',
-        [addressToScVal(cleanAdminAddress), addressToScVal(targetHospital)],
-        `Authorize hospital ${hospitalName || targetHospital.slice(0, 10)}... on Registry Whitelist`
+        [addressToScVal(cleanAdminAddress), addressToScVal(cleanHospitalAddress)],
+        `Authorize hospital ${hospitalName || cleanHospitalAddress.slice(0, 10)}... on Registry Whitelist`
       );
     },
     [wallet.address, executeOnChain]
